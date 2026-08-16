@@ -1,11 +1,11 @@
-using UnityEngine;
+﻿using UnityEngine;
 using GameNetwork;
-using System.Collections.Generic;
-using System;  // 添加 System 命名空间（包含 DateTimeOffset 和 Exception）
+using System;
 
 /// <summary>
-/// 网络消息处理器
-/// 负责注册和处理所有服务器消息
+/// 网络消息处理器（精简版）
+/// 职责：只处理最底层的网络连接和心跳
+/// 所有游戏逻辑（房间、玩家、帧同步）都通过 EventBus 分发到对应的 Manager
 /// </summary>
 public class NetworkHandler : MonoBehaviour
 {
@@ -28,19 +28,6 @@ public class NetworkHandler : MonoBehaviour
 
     #endregion
 
-    #region 私有字段
-
-    // 远程玩家字典 (playerId → RemotePlayerMovement)
-    private Dictionary<string, RemotePlayerMovement> _remotePlayers;
-    
-    // 本地玩家引用
-    private LocalPlayerMovement _localPlayer;
-
-    // 帧同步数据（用于调试）
-    private uint _lastReceivedFrameId;
-
-    #endregion
-
     #region Unity 生命周期
 
     private void Awake()
@@ -49,8 +36,6 @@ public class NetworkHandler : MonoBehaviour
         {
             _instance = this;
             DontDestroyOnLoad(gameObject);
-            
-            Initialize();
         }
         else if (_instance != this)
         {
@@ -60,68 +45,70 @@ public class NetworkHandler : MonoBehaviour
 
     private void Start()
     {
-        // 延迟一帧，确保其他组件已初始化
-        Invoke(nameof(LateInitialize), 0.1f);
+        // 延迟注册，确保 NetworkManager 已初始化
+        Invoke(nameof(RegisterHandlers), 0.1f);
     }
 
-    #endregion
-
-    #region 初始化
-
-    private void Initialize()
+    private void OnDestroy()
     {
-        _remotePlayers = new Dictionary<string, RemotePlayerMovement>();
-        
-        Debug.Log("[NetworkHandler] 初始化完成");
-    }
-
-    /// <summary>
-    /// 延迟初始化（等待 NetworkManager 就绪）
-    /// </summary>
-    private void LateInitialize()
-    {
-        // 注册所有消息处理器
-        RegisterHandlers();
-        
-        // 查找本地玩家
-        _localPlayer = FindObjectOfType<LocalPlayerMovement>();
-        
-        Debug.Log($"[NetworkHandler] ✅ 已注册 {CountHandlers()} 个消息处理器");
+        if (_instance == this)
+        {
+            _instance = null;
+        }
     }
 
     #endregion
 
     #region Handler 注册
 
+    /// <summary>
+    /// 注册所有消息处理器
+    /// 核心原则：收到消息后，解析数据，然后通过 EventBus 发布事件
+    /// 不直接操作任何游戏对象（Player、Room 等）
+    /// </summary>
     private void RegisterHandlers()
     {
         var nm = NetworkManager.Instance;
+        if (nm == null)
+        {
+            Debug.LogError("[NetworkHandler] ❌ NetworkManager 未初始化！");
+            return;
+        }
 
         // === 心跳 ===
         nm.RegisterHandler(MsgID.S2CHeartBeat, OnHeartBeat);
 
-        // === 房间管理 ===
+        // === 登录认证 → 直接发布 EventBus 事件 ===
+        nm.RegisterHandler(MsgID.S2CLogin, OnLoginResponse);
+
+        // === 房间管理 → 解析后发布 EventBus 事件 ===
         nm.RegisterHandler(MsgID.S2CCreateRoom, OnCreateRoom);
         nm.RegisterHandler(MsgID.S2CJoinRoom, OnJoinRoom);
         nm.RegisterHandler(MsgID.S2CLeaveRoom, OnLeaveRoom);
         nm.RegisterHandler(MsgID.S2CRoomList, OnRoomList);
 
-        // === 广播通知 ===
+        // === 广播通知 → 解析后发布 EventBus 事件 ===
         nm.RegisterHandler(MsgID.S2CPlayerJoin, OnPlayerJoin);
         nm.RegisterHandler(MsgID.S2CPlayerLeave, OnPlayerLeave);
 
-        // === 帧同步 ⭐ 核心！===
+        // === 帧同步 → 解析后发布 EventBus 事件 ===
         nm.RegisterHandler(MsgID.S2CFrameState, OnFrameState);
 
-        // === 游戏控制 ===
+        // === 游戏控制 → 解析后发布 EventBus 事件 ===
         nm.RegisterHandler(MsgID.S2CGameStart, OnGameStart);
         nm.RegisterHandler(MsgID.S2CGameOver, OnGameOver);
+
+        Debug.Log("[NetworkHandler] ✅ 已注册 10 个消息处理器（全部走 EventBus）");
     }
 
-    private int CountHandlers()
-    {
-        return 10; // 当前注册的 Handler 数量
-    }
+    #endregion
+
+    #region 通用辅助方法：发布事件
+
+    /// <summary>
+    /// 获取 EventBus 实例的快捷方式
+    /// </summary>
+    private GameEventBus EventBus => GameEventBus.GetInstance();
 
     #endregion
 
@@ -133,10 +120,7 @@ public class NetworkHandler : MonoBehaviour
         {
             var resp = HeartBeatResp.Parser.ParseFrom(data);
             long ping = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - resp.ClientTime;
-            
-            // 更新UI显示延迟（如果有）
-            // UIManager.Instance.UpdatePing(ping);
-            
+
             if (ping > 200)
             {
                 Debug.LogWarning($"[NetworkHandler] ⚠️ 高延迟: {ping}ms");
@@ -150,119 +134,248 @@ public class NetworkHandler : MonoBehaviour
 
     #endregion
 
-    #region Handler 实现 - 房间管理
+    #region Handler 实现 - 登录认证
+
+    /// <summary>
+    /// 收到登录响应 → 交给 NetworkManager 处理（NetworkManager 会发布 EventBus 事件）
+    /// </summary>
+    private void OnLoginResponse(byte[] data)
+    {
+        // NetworkManager.OnLoginResponse 会解析数据并发布 OnLoginSuccess/OnLoginFailed 事件
+        NetworkManager.Instance.OnLoginResponse(data);
+    }
+
+    #endregion
+
+    #region Handler 实现 - 房间管理（全部转 EventBus）
 
     private void OnCreateRoom(byte[] data)
     {
-        var resp = CreateRoomResp.Parser.ParseFrom(data);
-        
-        if (resp.Success)
+        try
         {
-            Debug.Log($"[NetworkHandler] ✅ 房间创建成功: {resp.RoomId}");
-            // TODO: 显示房间UI，等待其他玩家加入
+            var resp = CreateRoomResp.Parser.ParseFrom(data);
+
+            if (resp.Success)
+            {
+                Debug.Log($"[NetworkHandler] ✅ 房间创建成功: {resp.RoomId}");
+
+                // 发布房间创建事件
+                EventBus.Publish(
+                    GameEventType.OnRoomCreated,
+                    RoomCreatedEventData.Create(resp.RoomId, resp.RoomId, isHost: true)
+                );
+            }
+            else
+            {
+                Debug.LogError($"[NetworkHandler] ❌ 创建房间失败: {resp.Message}");
+            }
         }
-        else
+        catch (Exception ex)
         {
-            Debug.LogError($"[NetworkHandler] ❌ 创建房间失败: {resp.Message}");
+            Debug.LogError($"[NetworkHandler] ❌ 解析创建房间响应失败: {ex.Message}");
         }
     }
 
     private void OnJoinRoom(byte[] data)
     {
-        var resp = JoinRoomResp.Parser.ParseFrom(data);
-        
-        if (resp.Success && resp.RoomInfo != null)
+        try
         {
-            Debug.Log($"[NetworkHandler] ✅ 加入房间: {resp.RoomInfo.RoomName}");
-            Debug.Log($"   房间内玩家数: {resp.RoomInfo.CurrentPlayers}/{resp.RoomInfo.MaxPlayers}");
-            
-            // 初始化所有玩家（包括自己）
-            InitializePlayers(resp.RoomInfo);
+            var resp = JoinRoomResp.Parser.ParseFrom(data);
+
+            if (resp.Success && resp.RoomInfo != null)
+            {
+                Debug.Log($"[NetworkHandler] ✅ 加入房间: {resp.RoomInfo.RoomName}");
+
+                // 收集玩家ID列表
+                var playerIds = new System.Collections.Generic.List<string>();
+                foreach (var player in resp.RoomInfo.Players)
+                {
+                    playerIds.Add(player.PlayerId);
+                }
+
+                // 发布加入房间事件
+                EventBus.Publish(
+                    GameEventType.OnJoinedRoom,
+                    JoinedRoomEventData.Create(
+                        resp.RoomInfo.RoomId,
+                        resp.RoomInfo.RoomName,
+                        resp.RoomInfo.HostId,
+                        playerIds,
+                        resp.RoomInfo.MaxPlayers
+                    )
+                );
+
+                // 同时发布房间状态变更事件
+                EventBus.Publish(
+                    GameEventType.OnRoomStateChanged,
+                    RoomStateChangedEventData.Create(
+                        true,
+                        resp.RoomInfo.RoomId,
+                        resp.RoomInfo.CurrentPlayers
+                    )
+                );
+            }
+            else
+            {
+                Debug.LogError($"[NetworkHandler] ❌ 加入房间失败: {resp.Message}");
+
+                EventBus.Publish(
+                    GameEventType.OnJoinRoomFailed,
+                    new JoinRoomFailedEventData() // 可以扩展为 JoinRoomFailedEventData
+                );
+            }
         }
-        else
+        catch (Exception ex)
         {
-            Debug.LogError($"[NetworkHandler] ❌ 加入房间失败: {resp.Message}");
+            Debug.LogError($"[NetworkHandler] ❌ 解析加入房间响应失败: {ex.Message}");
         }
     }
 
     private void OnLeaveRoom(byte[] data)
     {
-        var resp = LeaveRoomResp.Parser.ParseFrom(data);
-        
-        if (resp.Success)
+        try
         {
-            Debug.Log("[NetworkHandler] ✅ 已离开房间");
-            ClearAllRemotePlayers();
+            var resp = LeaveRoomResp.Parser.ParseFrom(data);
+
+            if (resp.Success)
+            {
+                Debug.Log("[NetworkHandler] ✅ 已离开房间");
+
+                // LeaveRoomResp 没有 RoomId 字段，从 RoomManager 获取当前房间ID
+                string currentRoomId = RoomManager.GetInstance()?.CurrentRoom?.RoomId ?? "";
+
+                EventBus.Publish(
+                    GameEventType.OnLeftRoom,
+                    LeftRoomEventData.Create(currentRoomId)
+                );
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[NetworkHandler] ❌ 解析离开房间响应失败: {ex.Message}");
         }
     }
 
     private void OnRoomList(byte[] data)
     {
-        var resp = RoomListResp.Parser.ParseFrom(data);
-        
-        Debug.Log($"[NetworkHandler] 📋 房间列表 ({resp.Rooms.Count}个):");
-        
-        foreach (var room in resp.Rooms)
+        try
         {
-            Debug.Log($"   [{room.RoomId}] {room.RoomName} " +
-                     $"({room.CurrentPlayers}/{room.MaxPlayers}) " +
-                     $"{(room.IsPlaying ? "游戏中" : "等待中")}");
+            var resp = RoomListResp.Parser.ParseFrom(data);
+
+            Debug.Log($"[NetworkHandler] 📋 房间列表 ({resp.Rooms.Count}个):");
+
+            var roomInfos = new System.Collections.Generic.List<RoomManager.RoomInfo>();
+            foreach (var room in resp.Rooms)
+            {
+                Debug.Log($"   [{room.RoomId}] {room.RoomName} ({room.CurrentPlayers}/{room.MaxPlayers})");
+
+                roomInfos.Add(new RoomManager.RoomInfo
+                {
+                    RoomId = room.RoomId,
+                    RoomName = room.RoomName,
+                    HostPlayerId = room.HostId,
+                    MaxPlayers = room.MaxPlayers
+                });
+            }
+
+            EventBus.Publish(
+                GameEventType.OnRoomListUpdated,
+                RoomListUpdatedEventData.Create(roomInfos)
+            );
         }
-        
-        // TODO: 更新房间列表 UI
+        catch (Exception ex)
+        {
+            Debug.LogError($"[NetworkHandler] ❌ 解析房间列表失败: {ex.Message}");
+        }
     }
 
     #endregion
 
-    #region Handler 实现 - 玩家上下线
+    #region Handler 实现 - 玩家上下线（全部转 EventBus）
 
     private void OnPlayerJoin(byte[] data)
     {
-        var notify = PlayerJoinNotify.Parser.ParseFrom(data);
-        
-        string newPlayerId = notify.Player.PlayerId;
-        Debug.Log($"[NetworkHandler] 👋 玩家加入: {notify.Player.PlayerName} ({newPlayerId})");
-        
-        // 创建远程玩家对象
-        CreateRemotePlayer(newPlayerId, notify.Player);
+        try
+        {
+            var notify = PlayerJoinNotify.Parser.ParseFrom(data);
+
+            Debug.Log($"[NetworkHandler] 👋 玩家加入: {notify.Player.PlayerName} ({notify.Player.PlayerId})");
+
+            EventBus.Publish(
+                GameEventType.OnPlayerJoinedRoom,
+                PlayerJoinedRoomEventData.Create(notify.Player.PlayerId, notify.Player.PlayerName)
+            );
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[NetworkHandler] ❌ 解析玩家加入通知失败: {ex.Message}");
+        }
     }
 
     private void OnPlayerLeave(byte[] data)
     {
-        var notify = PlayerLeaveNotify.Parser.ParseFrom(data);
-        
-        Debug.Log($"[NetworkHandler] 👋 玩家离开: {notify.PlayerId}");
-        
-        // 销毁远程玩家对象
-        RemoveRemotePlayer(notify.PlayerId);
+        try
+        {
+            var notify = PlayerLeaveNotify.Parser.ParseFrom(data);
+
+            Debug.Log($"[NetworkHandler] 👋 玩家离开: {notify.PlayerId}");
+
+            EventBus.Publish(
+                GameEventType.OnPlayerLeftRoom,
+                PlayerLeftRoomEventData.Create(notify.PlayerId)
+            );
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[NetworkHandler] ❌ 解析玩家离开通知失败: {ex.Message}");
+        }
     }
 
     #endregion
 
-    #region Handler 实现 - 帧同步 ⭐⭐⭐ 最重要！
+    #region Handler 实现 - 帧同步（全部转 EventBus）
 
     private void OnFrameState(byte[] data)
     {
         try
         {
             var frameState = FrameStateResp.Parser.ParseFrom(data);
-            _lastReceivedFrameId = frameState.FrameId;
-            
-            // 1. 更新所有远程玩家的位置
-            foreach (var remotePlayer in _remotePlayers.Values)
+
+            // 发布帧同步更新事件
+            // 注意：PlayerInput 只包含输入数据（MoveX, MoveY等），不包含位置
+            // 位置计算由 FrameSyncManager / RemotePlayerMovement 处理
+            var eventData = FrameSyncUpdateEventData.Create(
+                (int)frameState.FrameId,
+                frameState.ServerTime,
+                frameState.PlayerInputs.Count
+            );
+            eventData.RawData = data;
+
+            EventBus.Publish(GameEventType.OnFrameSyncUpdate, eventData);
+
+            // 同时发布每个玩家的输入事件（供 RemotePlayerMovement 使用）
+            foreach (var kvp in frameState.PlayerInputs)
             {
-                remotePlayer.OnReceiveFrameState(frameState);
+                string playerId = kvp.Key;
+                var input = kvp.Value;
+
+                EventBus.Publish(
+                    GameEventType.OnPlayerInputReceived,
+                    PlayerInputEventData.Create(
+                        playerId,
+                        (int)frameState.FrameId,
+                        input.MoveX,
+                        input.MoveY,
+                        input.Jump,
+                        input.Fire
+                    )
+                );
             }
-            
-            // 2. （可选）检查本地玩家是否需要校正
-            // 如果服务器返回了权威位置，可以在这里校正
-            
+
             // 调试日志（每100帧输出一次）
             if (frameState.FrameId % 100 == 0)
             {
-                Debug.Log($"[NetworkHandler] 🎮 帧 #{frameState.FrameId}, " +
-                         $"在线输入: {frameState.PlayerInputs.Count}, " +
-                         $"远程玩家: {_remotePlayers.Count}");
+                Debug.Log($"[NetworkHandler] 🎮 帧 #{frameState.FrameId}, 在线输入: {frameState.PlayerInputs.Count}");
             }
         }
         catch (Exception ex)
@@ -273,105 +386,44 @@ public class NetworkHandler : MonoBehaviour
 
     #endregion
 
-    #region Handler 实现 - 游戏控制
+    #region Handler 实现 - 游戏控制（全部转 EventBus）
 
     private void OnGameStart(byte[] data)
     {
-        var notify = GameStartNotify.Parser.ParseFrom(data);
-        
-        Debug.Log($"[NetworkHandler] 🎮 游戏开始! Room: {notify.RoomId}");
-        // TODO: 开始游戏逻辑（倒计时、禁用UI等）
+        try
+        {
+            var notify = GameStartNotify.Parser.ParseFrom(data);
+
+            Debug.Log($"[NetworkHandler] 🎮 游戏开始! Room: {notify.RoomId}");
+
+            EventBus.Publish(
+                GameEventType.OnGameStart,
+                GameStartedEventData.Create(notify.RoomId)
+            );
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[NetworkHandler] ❌ 解析游戏开始通知失败: {ex.Message}");
+        }
     }
 
     private void OnGameOver(byte[] data)
     {
-        var notify = GameOverNotify.Parser.ParseFrom(data);
-        
-        Debug.Log($"[NetworkHandler] 🏁 游戏结束! 胜利者: {notify.WinnerId}");
-        // TODO: 显示结果界面
-    }
-
-    #endregion
-
-    #region 玩家管理方法
-
-    /// <summary>
-    /// 初始化房间内所有玩家（加入房间时调用）
-    /// </summary>
-    private void InitializePlayers(RoomInfo roomInfo)
-    {
-        ClearAllRemotePlayers();
-        
-        foreach (var playerInfo in roomInfo.Players)
+        try
         {
-            // 跳过本地玩家（假设第一个是房主/自己）
-            // 实际应该根据 playerId 判断
-            if (playerInfo.PlayerId == GetLocalPlayerId())
-            {
-                continue; // 这是自己，不创建远程对象
-            }
-            
-            CreateRemotePlayer(playerInfo.PlayerId, playerInfo);
-        }
-    }
+            var notify = GameOverNotify.Parser.ParseFrom(data);
 
-    /// <summary>
-    /// 创建远程玩家对象
-    /// </summary>
-    private void CreateRemotePlayer(string playerId, PlayerInfo playerInfo)
-    {
-        if (_remotePlayers.ContainsKey(playerId))
+            Debug.Log($"[NetworkHandler] 🏁 游戏结束! 胜利者: {notify.WinnerId}");
+
+            EventBus.Publish(
+                GameEventType.OnGameOver,
+                GameEndedEventData.Create(notify.WinnerId)
+            );
+        }
+        catch (Exception ex)
         {
-            return; // 已存在
+            Debug.LogError($"[NetworkHandler] ❌ 解析游戏结束通知失败: {ex.Message}");
         }
-        
-        // 实例化预制体（需要先创建一个远程玩家预制体）
-        GameObject remotePlayerGO = new GameObject($"RemotePlayer_{playerId}");
-        remotePlayerGO.transform.position = Vector3.zero; // 初始位置，后续由帧同步更新
-        
-        var remoteMovement = remotePlayerGO.AddComponent<RemotePlayerMovement>();
-        remoteMovement.SetPlayerId(playerId);
-        
-        _remotePlayers[playerId] = remoteMovement;
-        
-        Debug.Log($"[NetworkHandler] ➕ 创建远程玩家: {playerInfo.PlayerName} ({playerId})");
-    }
-
-    /// <summary>
-    /// 移除远程玩家
-    /// </summary>
-    private void RemoveRemotePlayer(string playerId)
-    {
-        if (_remotePlayers.TryGetValue(playerId, out var remotePlayer))
-        {
-            Destroy(remotePlayer.gameObject);
-            _remotePlayers.Remove(playerId);
-        }
-    }
-
-    /// <summary>
-    /// 清除所有远程玩家
-    /// </summary>
-    private void ClearAllRemotePlayers()
-    {
-        foreach (var kvp in _remotePlayers)
-        {
-            if (kvp.Value != null)
-            {
-                Destroy(kvp.Value.gameObject);
-            }
-        }
-        _remotePlayers.Clear();
-    }
-
-    /// <summary>
-    /// 获取本地玩家ID（简化版，实际应从登录系统获取）
-    /// </summary>
-    private string GetLocalPlayerId()
-    {
-        // TODO: 从用户系统获取真实 ID
-        // 暂时使用固定值或随机生成
-        return "LocalPlayer_001";
     }
 
     #endregion

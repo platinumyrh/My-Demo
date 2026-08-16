@@ -210,6 +210,24 @@ public class RemotePlayerMovement : MonoBehaviour
     }
 
     /// <summary>
+    /// 设置目标位置（用于帧同步插值）
+    /// </summary>
+    public void SetTargetPosition(Vector3 targetPosition)
+    {
+        // 创建一个新的目标快照
+        _currentTarget = new PositionSnapshot
+        {
+            FrameId = 0,
+            Position = targetPosition,
+            Rotation = transform.rotation,
+            Timestamp = Time.time
+        };
+
+        // 更新显示位置的目标
+        _displayPosition = transform.position;
+    }
+
+    /// <summary>
     /// 清理缓冲区（玩家离开时调用）
     /// </summary>
     public void ClearBuffer()

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+﻿﻿using UnityEngine;
 using GameNetwork;
 
 /// <summary>
@@ -45,6 +45,73 @@ public class LocalPlayerMovement : MonoBehaviour
         _predictedPosition = transform.position;
         _predictedRotation = transform.rotation;
     }
+
+    #endregion
+
+    #region 公开属性
+
+    /// <summary>
+    /// 玩家唯一ID
+    /// </summary>
+    public string PlayerId { get; private set; } = "";
+
+    /// <summary>
+    /// 玩家显示名称
+    /// </summary>
+    public string PlayerName { get; private set; } = "";
+
+    #endregion
+
+    #region 公开方法 - 初始化
+
+    /// <summary>
+    /// 🔑 初始化本地玩家（由 GameInitializer / PlayerManager 调用）
+    /// </summary>
+    /// <param name="playerId">玩家唯一ID</param>
+    /// <param name="playerName">玩家显示名称</param>
+    public void Initialize(string playerId, string playerName)
+    {
+        PlayerId = playerId;
+        PlayerName = playerName;
+
+        // 设置玩家标识
+        gameObject.name = $"LocalPlayer_{playerId}";
+
+        // 可以在这里设置玩家颜色、模型等个性化数据
+        Debug.Log($"[LocalPlayerMovement] ✅ 初始化完成: {playerName} (ID: {playerId})");
+    }
+
+    /// <summary>
+    /// 客户端预测移动（由 FrameSyncManager 调用）
+    /// </summary>
+    public void PredictMovement(float horizontal, float vertical)
+    {
+        // 简化的预测移动逻辑
+        Vector3 moveDirection = new Vector3(horizontal, 0, vertical);
+        if (moveDirection.sqrMagnitude > 0.01f)
+        {
+            moveDirection.Normalize();
+            _controller.Move(moveDirection * walkSpeed * Time.deltaTime);
+        }
+    }
+
+    /// <summary>
+    /// 服务器回包校验位置（由 FrameSyncManager 调用）
+    /// </summary>
+    public void ServerReconciliation(Vector3 serverPosition)
+    {
+        // 简单的位置校正（可以优化为平滑插值）
+        float distance = Vector3.Distance(transform.position, serverPosition);
+        if (distance > 0.5f) // 偏差超过阈值才校正
+        {
+            transform.position = serverPosition;
+            _predictedPosition = serverPosition;
+        }
+    }
+
+    #endregion
+
+    #region Unity 生命周期（继续）
 
     private void Update()
     {
