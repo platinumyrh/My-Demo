@@ -874,7 +874,7 @@ MonoBehaviour:
   Btn_Log_in: {fileID: 151995841}
   Btn_Log_in_as_Tourist: {fileID: 2063026639}
   Text_Message: {fileID: 1686208594}
-  nextSceneName: GameMenu
+  nextSceneName: Lobby
   serverIP: 127.0.0.1
   serverPort: 7777
 --- !u!1 &783902189

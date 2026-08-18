@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+﻿﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections;
@@ -35,7 +35,7 @@ public class LoginUIController : MonoBehaviour
 
     [Header("配置")]
     [Tooltip("登录成功后跳转的场景名称")]
-    public string nextSceneName = "GameMenu";     // 登录成功后跳转的场景名
+    public string nextSceneName = "Lobby";     // 登录成功后跳转的场景名
 
     [Tooltip("连接服务器的IP地址")]
     public string serverIP = "127.0.0.1";

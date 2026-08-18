@@ -418,6 +418,44 @@ public class NetworkManager : MonoBehaviour
         Send(MsgID.C2SPlayerInput, input);
     }
 
+    /// <summary>
+    /// 请求房间列表
+    /// </summary>
+    public void SendGetRoomList()
+    {
+        if (!_isLoggedIn)
+        {
+            Debug.LogWarning("[NetworkManager] 未登录，无法获取房间列表");
+            return;
+        }
+
+        var req = new GetRoomListReq();
+        Send(MsgID.C2SGetRoomList, req);
+        Debug.Log("[NetworkManager] 📤 发送获取房间列表请求");
+    }
+
+    /// <summary>
+    /// 创建房间
+    /// </summary>
+    /// <param name="roomName">房间名称</param>
+    /// <param name="password">房间密码（空表示无密码）</param>
+    public void SendCreateRoom(string roomName = "", string password = "")
+    {
+        if (!_isLoggedIn)
+        {
+            Debug.LogWarning("[NetworkManager] 未登录，无法创建房间");
+            return;
+        }
+
+        var req = new CreateRoomReq
+        {
+            RoomName = roomName,
+            Password = password
+        };
+        Send(MsgID.C2SCreateRoom, req);
+        Debug.Log($"[NetworkManager] 📤 发送创建房间请求: {roomName}");
+    }
+
     #endregion
 
     #region 私有方法 - 核心功能

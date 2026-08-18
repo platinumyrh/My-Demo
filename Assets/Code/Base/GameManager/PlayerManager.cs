@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+﻿﻿using UnityEngine;
 using System.Collections.Generic;
 
 /// <summary>
@@ -71,12 +71,6 @@ public class PlayerManager : BaseManager<PlayerManager>
     {
         var eventBus = GameEventBus.GetInstance();
 
-        // 登录成功 → 创建本地玩家
-        eventBus.Subscribe<LoginSuccessEventData>(
-            GameEventType.OnLoginSuccess,
-            OnLoginSuccess
-        );
-
         // 其他玩家加入房间 → 创建远程玩家
         eventBus.Subscribe<PlayerJoinedRoomEventData>(
             GameEventType.OnPlayerJoinedRoom,
@@ -105,11 +99,6 @@ public class PlayerManager : BaseManager<PlayerManager>
     {
         var eventBus = GameEventBus.GetInstance();
 
-        eventBus.Unsubscribe<LoginSuccessEventData>(
-            GameEventType.OnLoginSuccess,
-            OnLoginSuccess
-        );
-
         eventBus.Unsubscribe<PlayerJoinedRoomEventData>(
             GameEventType.OnPlayerJoinedRoom,
             OnRemotePlayerJoined
@@ -129,23 +118,6 @@ public class PlayerManager : BaseManager<PlayerManager>
     #endregion
 
     #region EventBus 事件处理器
-
-    /// <summary>
-    /// 登录成功 → 创建本地玩家
-    /// </summary>
-    private void OnLoginSuccess(LoginSuccessEventData eventData)
-    {
-        Debug.Log($"[PlayerManager] 🎉 收到登录成功事件，创建本地玩家: {eventData.Username}");
-
-        // 使用 MonoManager 延迟一帧创建
-        MonoManager.GetInstance().StartCoroutine(DelayedCreateLocalPlayer(eventData.UserId, eventData.Username));
-    }
-
-    private System.Collections.IEnumerator DelayedCreateLocalPlayer(string userId, string userName)
-    {
-        yield return null; // 等待一帧
-        CreateLocalPlayer(userId, userName);
-    }
 
     /// <summary>
     /// 其他玩家加入 → 创建远程玩家
