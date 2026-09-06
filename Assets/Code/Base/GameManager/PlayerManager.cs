@@ -42,8 +42,8 @@ public class PlayerManager : BaseManager<PlayerManager>
     // 本地玩家引用
     private LocalPlayerMovement _localPlayer;
 
-    // 是否已初始化
-    private bool _isInitialized = false;
+    // 当前是否已订阅 EventBus（退订后允许重新订阅，见 RoomManager 同款修复）
+    private bool _subscribedToEventBus = false;
 
     // 使用 MonoManager 来运行协程
 
@@ -56,11 +56,11 @@ public class PlayerManager : BaseManager<PlayerManager>
     /// </summary>
     public void Initialize()
     {
-        if (_isInitialized) return;
+        if (_subscribedToEventBus) return;
 
         SubscribeToEventBus();
+        _subscribedToEventBus = true;
 
-        _isInitialized = true;
         Debug.Log("[PlayerManager] ✅ 初始化完成");
     }
 
@@ -83,11 +83,8 @@ public class PlayerManager : BaseManager<PlayerManager>
             OnRemotePlayerLeft
         );
 
-        // 帧同步更新 → 更新所有远程玩家位置
-        eventBus.Subscribe<FrameSyncUpdateEventData>(
-            GameEventType.OnFrameSyncUpdate,
-            OnFrameSyncUpdate
-        );
+        // 注意：帧同步数据不走 EventBus，
+        // 由 FrameSyncManager.OnServerFrame 直接调用 GetRemotePlayer 分发给远程玩家
 
         Debug.Log("[PlayerManager] 📡 已订阅 EventBus 事件");
     }
@@ -97,6 +94,8 @@ public class PlayerManager : BaseManager<PlayerManager>
     /// </summary>
     public void UnsubscribeFromEventBus()
     {
+        if (!_subscribedToEventBus) return;
+
         var eventBus = GameEventBus.GetInstance();
 
         eventBus.Unsubscribe<PlayerJoinedRoomEventData>(
@@ -109,10 +108,7 @@ public class PlayerManager : BaseManager<PlayerManager>
             OnRemotePlayerLeft
         );
 
-        eventBus.Unsubscribe<FrameSyncUpdateEventData>(
-            GameEventType.OnFrameSyncUpdate,
-            OnFrameSyncUpdate
-        );
+        _subscribedToEventBus = false;
     }
 
     #endregion
@@ -137,15 +133,6 @@ public class PlayerManager : BaseManager<PlayerManager>
         Debug.Log($"[PlayerManager] 👋 远程玩家离开: {eventData.PlayerId}");
 
         RemoveRemotePlayer(eventData.PlayerId);
-    }
-
-    /// <summary>
-    /// 帧同步更新 → 更新远程玩家位置
-    /// </summary>
-    private void OnFrameSyncUpdate(FrameSyncUpdateEventData eventData)
-    {
-        // 这里可以处理帧同步数据
-        // 实际的位置更新由 RemotePlayerMovement 自己处理
     }
 
     #endregion
@@ -192,7 +179,10 @@ public class PlayerManager : BaseManager<PlayerManager>
     /// <summary>
     /// 创建远程玩家
     /// </summary>
-    public RemotePlayerMovement CreateRemotePlayer(string playerId, string playerName)
+    /// <param name="playerId">玩家ID</param>
+    /// <param name="playerName">玩家名</param>
+    /// <param name="spawnPosition">出生位置（确定性槽位）；不传则按本地加入顺序圆形分布（兜底）</param>
+    public RemotePlayerMovement CreateRemotePlayer(string playerId, string playerName, Vector3? spawnPosition = null)
     {
         // 检查是否已存在
         if (_remotePlayers.ContainsKey(playerId))
@@ -207,14 +197,23 @@ public class PlayerManager : BaseManager<PlayerManager>
             return null;
         }
 
-        // 计算出生位置（圆形分布）
-        int index = _remotePlayers.Count;
-        float angle = index * (360f / 8f) * Mathf.Deg2Rad;
-        Vector3 spawnPos = new Vector3(
-            Mathf.Cos(angle) * RemoteSpawnRadius,
-            0,
-            Mathf.Sin(angle) * RemoteSpawnRadius
-        );
+        // 出生位置：优先使用调用方给定的确定性槽位
+        Vector3 spawnPos;
+        if (spawnPosition.HasValue)
+        {
+            spawnPos = spawnPosition.Value;
+        }
+        else
+        {
+            // 兜底：圆形分布（按已创建数量）
+            int index = _remotePlayers.Count;
+            float angle = index * (360f / 8f) * Mathf.Deg2Rad;
+            spawnPos = new Vector3(
+                Mathf.Cos(angle) * RemoteSpawnRadius,
+                3f,
+                Mathf.Sin(angle) * RemoteSpawnRadius
+            );
+        }
 
         // 实例化
         GameObject playerObj = Object.Instantiate(RemotePlayerPrefab, spawnPos, Quaternion.identity);
@@ -229,7 +228,7 @@ public class PlayerManager : BaseManager<PlayerManager>
 
             _remotePlayers[playerId] = remoteMovement;
 
-            Debug.Log($"[PlayerManager] ✅ 远程玩家创建完成: {playerName} (共 {_remotePlayers.Count} 人)");
+            Debug.Log($"[PlayerManager] ✅ 远程玩家创建完成: {playerName} at {spawnPos} (共 {_remotePlayers.Count} 人)");
         }
         else
         {

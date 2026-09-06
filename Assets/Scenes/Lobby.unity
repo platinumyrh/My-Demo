@@ -535,53 +535,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1200736055}
   m_CullTransparentMesh: 1
---- !u!1 &1262696483
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1262696485}
-  - component: {fileID: 1262696484}
-  m_Layer: 0
-  m_Name: NetworkManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1262696484
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1262696483}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ac2e839c74d68694e803665a080ffc43, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  serverIP: 127.0.0.1
-  serverPort: 7777
-  heartBeatInterval: 2
---- !u!4 &1262696485
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1262696483}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1413.9978, y: 742.23486, z: 2.4703436}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1393592666
 GameObject:
   m_ObjectHideFlags: 0
@@ -1104,6 +1057,7 @@ MonoBehaviour:
   RoomListContent: {fileID: 1784607780}
   RoomItemPrefab: {fileID: 8912182053487965196, guid: 2c9964ed858c7bd448062ac76d23b0bf, type: 3}
   Text_Message: {fileID: 1200736057}
+  roomSceneName: Room
 --- !u!1 &1966218597
 GameObject:
   m_ObjectHideFlags: 0
@@ -1274,4 +1228,3 @@ SceneRoots:
   - {fileID: 2025582864}
   - {fileID: 1855586289}
   - {fileID: 1966218600}
-  - {fileID: 1262696485}

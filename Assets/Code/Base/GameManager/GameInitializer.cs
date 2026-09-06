@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections.Generic;
 
 /// <summary>
 /// 游戏初始化器（只在 Main/GameMenu 场景存在）
@@ -88,10 +89,82 @@ public class GameInitializer : MonoBehaviour
         // 5️⃣ 订阅 EventBus 事件（用于协调各 Manager）
         SubscribeToEventBus();
 
+        // 6️⃣ 如果已在房间（正常流程：Room 场景点击开始游戏后跳转过来），
+        //     生成本地玩家，并按房间成员重建远程玩家
+        SetupPlayersForCurrentRoom();
+
         _isInitialized = true;
 
         Debug.Log("[GameInitializer] ✅ 游戏组件初始化完成");
         Debug.Log("   📋 初始化顺序: NetworkHandler → PlayerManager → RoomManager → FrameSyncManager");
+    }
+
+    /// <summary>
+    /// 按当前房间状态生成玩家
+    /// 远程玩家在之前的场景里可能已经生成过（切场景时 GameObject 已销毁），
+    /// 所以先清空再按 RoomManager 的成员列表重建
+    ///
+    /// 出生点规则（确定性）：以房间成员列表的顺序分配圆形槽位，
+    /// 每个玩家在自己的客户端和别人的客户端都用同一个槽位——
+    /// 本地玩家在自己的槽位出生，远程玩家在对方的槽位出生，两端镜像一致
+    /// </summary>
+    private void SetupPlayersForCurrentRoom()
+    {
+        var roomManager = RoomManager.GetInstance();
+        var playerManager = PlayerManager.GetInstance();
+        var networkManager = NetworkManager.Instance;
+
+        if (roomManager == null || playerManager == null || networkManager == null) return;
+
+        if (!roomManager.IsInRoom)
+        {
+            Debug.LogWarning("[GameInitializer] ⚠️ 当前不在房间中，跳过玩家生成");
+            return;
+        }
+
+        // 清掉上一场景遗留的远程玩家引用，按房间成员重建
+        playerManager.ClearAllRemotePlayers();
+
+        string localId = networkManager.GetLocalPlayerId();
+        string localName = networkManager.GetLocalPlayerName();
+        if (string.IsNullOrEmpty(localName)) localName = localId;
+
+        // 确定性槽位：成员列表顺序（服务端维护，各端一致）→ 圆形分布
+        List<string> members = roomManager.RoomPlayerIds;
+        int slotCount = Mathf.Max(members.Count, 1);
+
+        Vector3 SlotOf(int index)
+        {
+            float angle = index * (360f / slotCount) * Mathf.Deg2Rad;
+            return new Vector3(
+                Mathf.Cos(angle) * remotePlayerSpawnRadius,
+                3f, // 所有出生点抬高3，避免生成时陷入地面
+                Mathf.Sin(angle) * remotePlayerSpawnRadius
+            );
+        }
+
+        // 本地玩家在自己的槽位出生
+        int localIndex = members.IndexOf(localId);
+        if (localIndex < 0) localIndex = 0;
+        Vector3 localSlot = SlotOf(localIndex);
+        playerManager.LocalSpawnPosition = localSlot;
+
+        var localPlayer = playerManager.CreateLocalPlayer(localId, localName);
+        if (localPlayer != null)
+        {
+            Debug.Log($"[GameInitializer] ✅ 本地玩家已生成: {localName} ({localId})，槽位{localIndex} {localSlot}");
+        }
+
+        // 远程玩家在各自的槽位出生
+        foreach (string playerId in members)
+        {
+            if (playerId == localId) continue;
+
+            int remoteIndex = members.IndexOf(playerId);
+            playerManager.CreateRemotePlayer(playerId, playerId, SlotOf(remoteIndex));
+        }
+
+        Debug.Log($"[GameInitializer] 📋 远程玩家已按房间成员重建，共 {members.Count - 1} 人");
     }
 
     #endregion

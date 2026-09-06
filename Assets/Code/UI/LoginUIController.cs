@@ -55,6 +55,11 @@ public class LoginUIController : MonoBehaviour
 
     private void Start()
     {
+        // 🔑 确保网络层就绪（原来是 GameInitializer 在本场景顺带创建的）：
+        // NetworkHandler 是懒加载单例，首次访问即创建并在 0.1 秒后注册全部 S2C 消息处理器，
+        // 登录响应 S2C_Login 必须由它处理，所以登录场景就要把它拉起来
+        var networkHandler = NetworkHandler.Instance;
+
         // 初始化UI组件引用（如果Inspector没拖拽，尝试自动查找）
         InitializeUIReferences();
 
@@ -120,22 +125,18 @@ public class LoginUIController : MonoBehaviour
             Input_Password.onEndEdit.RemoveAllListeners();
         }
 
-        // 🔑 取消 EventBus 订阅（防止内存泄漏）
+        // 取消 EventBus 订阅（防止内存泄漏）
         var eventBus = GameEventBus.GetInstance();
-        
+
         eventBus.Unsubscribe<LoginSuccessEventData>(
             GameEventType.OnLoginSuccess,
             HandleLoginSuccessViaEventBus
         );
-        
+
         eventBus.Unsubscribe<LoginFailedEventData>(
             GameEventType.OnLoginFailed,
             HandleLoginFailedViaEventBus
         );
-        
-        // （兼容性保留）取消旧的委托订阅
-        // NetworkManager.Instance.OnLoginSuccess -= HandleLoginSuccess;
-        // NetworkManager.Instance.OnLoginFailed -= HandleLoginFailed;
 
         Debug.Log("[LoginUI] 登录界面已销毁");
     }
@@ -271,10 +272,17 @@ public class LoginUIController : MonoBehaviour
 
         // 步骤2：发送登录请求
         ShowMessage("正在验证账号...", Color.cyan);
-        NetworkManager.Instance.Login(username, password);
+        bool sent = NetworkManager.Instance.Login(username, password);
+        if (!sent)
+        {
+            ShowMessage("❌ 登录请求发送失败", Color.red);
+            SetInteractionEnabled(true);
+            _isProcessing = false;
+            yield break;
+        }
 
-        // 注意：不在这里等待结果，而是通过事件回调处理（HandleLoginSuccess / HandleLoginFailed）
-        // 这样可以避免协程阻塞，同时保持代码清晰
+        // 注意：不在这里等待结果，登录响应由 NetworkHandler 解析后
+        // 通过 EventBus 发布 OnLoginSuccess/OnLoginFailed 事件
     }
 
     /// <summary>
@@ -292,16 +300,9 @@ public class LoginUIController : MonoBehaviour
     }
     
     /// <summary>
-    /// （兼容性保留）旧的委托方式处理登录成功
-    /// 后续可移除此方法
+    /// （已废弃）旧的委托方式处理登录成功 —— 请使用 HandleLoginSuccessViaEventBus
     /// </summary>
-    private void HandleLoginSuccess(string userId, string nickname)
-    {
-        // 转调用新的 EventBus 方式
-        Debug.Log("[LoginUI] ⚠️ 使用旧版 HandleLoginSuccess 委托（建议迁移到 EventBus）");
-        ShowMessage($"✅ 登录成功！欢迎回来，{nickname}", Color.green);
-        StartCoroutine(DelayedLoadScene());
-    }
+    // private void HandleLoginSuccess(string userId, string nickname) { ... }
 
     /// <summary>
     /// 延迟加载下一个场景
@@ -336,16 +337,9 @@ public class LoginUIController : MonoBehaviour
     }
     
     /// <summary>
-    /// （兼容性保留）旧的委托方式处理登录失败
-    /// 后续可移除此方法
+    /// （已废弃）旧的委托方式处理登录失败 —— 请使用 HandleLoginFailedViaEventBus
     /// </summary>
-    private void HandleLoginFailed(string errorMessage)
-    {
-        Debug.Log("[LoginUI] ⚠️ 使用旧版 HandleLoginFailed 委托（建议迁移到 EventBus）");
-        ShowMessage($"❌ {errorMessage}", Color.red);
-        SetInteractionEnabled(true);
-        _isProcessing = false;
-    }
+    // private void HandleLoginFailed(string errorMessage) { ... }
 
     #endregion
 

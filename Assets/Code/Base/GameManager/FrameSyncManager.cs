@@ -1,40 +1,24 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using GameNetwork;
 
 /// <summary>
-/// 帧同步管理器
-/// 负责处理帧同步逻辑：收集输入、发送输入、接收服务器帧、更新远程玩家
-/// 通过 EventBus 订阅网络事件，驱动帧同步流程
-/// 
-/// 🔑 继承 BaseManager 实现单例模式
+/// 帧同步管理器（客户端侧）
+/// 职责：
+/// 1. 监听游戏开始/结束事件，控制同步状态
+/// 2. 接收服务器帧广播（由 NetworkHandler 解析后直接调用 OnServerFrame），分发给远程玩家
+///
+/// 注意：本地输入的收集和发送由 LocalPlayerMovement（挂玩家预制体）负责，
+/// 本类不再重复收集输入/驱动本地移动，避免双重移动和重复发包
 /// </summary>
 public class FrameSyncManager : BaseManager<FrameSyncManager>
 {
     #region 配置参数
 
     /// <summary>
-    /// 服务器帧率（每秒帧数）
+    /// 服务器帧率（每秒帧数），需与服务端 FrameSyncManager 的帧率一致
     /// </summary>
-    public int ServerFrameRate { get; set; } = 20;
-
-    /// <summary>
-    /// 客户端预测：是否启用
-    /// </summary>
-    public bool EnableClientPrediction { get; set; } = true;
-
-    /// <summary>
-    /// 插值延迟（秒）
-    /// </summary>
-    public float InterpolationDelay { get; set; } = 0.1f;
-
-    #endregion
-
-    #region 属性
-
-    /// <summary>
-    /// 当前帧号
-    /// </summary>
-    public int CurrentFrameId { get; private set; }
+    public int ServerFrameRate { get; set; } = 30;
 
     /// <summary>
     /// 是否正在帧同步中
@@ -48,47 +32,22 @@ public class FrameSyncManager : BaseManager<FrameSyncManager>
 
     #endregion
 
+    #region 属性
+
+    /// <summary>
+    /// 当前帧号（来自最近收到的服务器帧）
+    /// </summary>
+    public int CurrentFrameId { get; private set; }
+
+    #endregion
+
     #region 私有字段
-
-    // 帧同步定时器
-    private float _frameTimer = 0f;
-
-    // 本地玩家输入缓存
-    private PlayerInput _currentInput;
-
-    // 帧历史（用于回滚）
-    private Dictionary<int, FrameData> _frameHistory = new Dictionary<int, FrameData>();
 
     // 是否已初始化
     private bool _isInitialized = false;
 
-    // 使用 MonoManager 来驱动 Update
-
-    #endregion
-
-    #region 数据结构
-
-    /// <summary>
-    /// 玩家输入
-    /// </summary>
-    public struct PlayerInput
-    {
-        public float Horizontal;
-        public float Vertical;
-        public bool Jump;
-        public bool Attack;
-
-        public bool IsEmpty => Horizontal == 0 && Vertical == 0 && !Jump && !Attack;
-    }
-
-    /// <summary>
-    /// 帧数据
-    /// </summary>
-    public class FrameData
-    {
-        public int FrameId;
-        public Dictionary<string, PlayerInput> PlayerInputs = new Dictionary<string, PlayerInput>();
-    }
+    // 当前是否已订阅 EventBus / 注册 Update（退订后允许重新订阅）
+    private bool _subscribed = false;
 
     #endregion
 
@@ -99,15 +58,23 @@ public class FrameSyncManager : BaseManager<FrameSyncManager>
     /// </summary>
     public void Initialize()
     {
-        if (_isInitialized) return;
+        if (_subscribed) return;
 
         SubscribeToEventBus();
 
-        // 注册到 MonoManager 的 Update 事件
-        MonoManager.GetInstance().AddUpdateListener(OnUpdate);
-
         _isInitialized = true;
+        _subscribed = true;
         Debug.Log("[FrameSyncManager] ✅ 初始化完成");
+
+        // 状态追赶：OnGameStart 事件可能在本组件订阅之前就发过了
+        //（典型场景：Room 场景收到 S2C_GameStart 后跳转 Main，本组件在 Main 才初始化）。
+        // RoomManager.CurrentRoom.IsInGame 是跨场景保留的持久状态，以此补齐同步状态
+        var room = RoomManager.GetInstance()?.CurrentRoom;
+        if (room != null && room.IsInGame)
+        {
+            Debug.Log("[FrameSyncManager] ⏩ 检测到游戏已开始（事件早于本组件初始化），直接进入同步状态");
+            StartFrameSync();
+        }
     }
 
     /// <summary>
@@ -115,29 +82,16 @@ public class FrameSyncManager : BaseManager<FrameSyncManager>
     /// </summary>
     public void Dispose()
     {
-        MonoManager.GetInstance().RemoveUpdateListener(OnUpdate);
+        if (!_subscribed) return;
+
         UnsubscribeFromEventBus();
-    }
-
-    /// <summary>
-    /// 每帧更新（由 MonoManager 驱动）
-    /// </summary>
-    private void OnUpdate()
-    {
-        if (!IsSyncing) return;
-
-        // 收集本地输入
-        CollectLocalInput();
-
-        // 发送输入到服务器
-        SendInputToServer();
-
-        // 帧同步逻辑（简化：在 Update 中执行，如需 FixedUpdate 节奏可自行实现定时器）
-        ProcessFrameSync();
+        _subscribed = false;
     }
 
     /// <summary>
     /// 订阅 EventBus 事件
+    /// 注意：帧同步数据（S2C_FrameState）不走 EventBus，
+    /// 由 NetworkHandler 解析后直接调用 OnServerFrame
     /// </summary>
     private void SubscribeToEventBus()
     {
@@ -153,18 +107,6 @@ public class FrameSyncManager : BaseManager<FrameSyncManager>
         eventBus.Subscribe<GameEndedEventData>(
             GameEventType.OnGameOver,
             OnGameEnded
-        );
-
-        // 帧同步更新
-        eventBus.Subscribe<FrameSyncUpdateEventData>(
-            GameEventType.OnFrameSyncUpdate,
-            OnFrameSyncUpdate
-        );
-
-        // 其他玩家输入
-        eventBus.Subscribe<PlayerInputEventData>(
-            GameEventType.OnPlayerInputReceived,
-            OnPlayerInputReceived
         );
 
         Debug.Log("[FrameSyncManager] 📡 已订阅 EventBus 事件");
@@ -186,21 +128,9 @@ public class FrameSyncManager : BaseManager<FrameSyncManager>
             GameEventType.OnGameOver,
             OnGameEnded
         );
-
-        eventBus.Unsubscribe<FrameSyncUpdateEventData>(
-            GameEventType.OnFrameSyncUpdate,
-            OnFrameSyncUpdate
-        );
-
-        eventBus.Unsubscribe<PlayerInputEventData>(
-            GameEventType.OnPlayerInputReceived,
-            OnPlayerInputReceived
-        );
     }
 
     #endregion
-
-    // Update 循环已由 MonoManager 驱动（OnUpdate 方法）
 
     #region EventBus 事件处理器
 
@@ -222,27 +152,6 @@ public class FrameSyncManager : BaseManager<FrameSyncManager>
         StopFrameSync();
     }
 
-    /// <summary>
-    /// 收到服务器帧同步数据
-    /// </summary>
-    private void OnFrameSyncUpdate(FrameSyncUpdateEventData eventData)
-    {
-        // 更新当前帧号
-        CurrentFrameId = eventData.FrameId;
-
-        // 更新远程玩家位置
-        ApplyServerFrame(eventData);
-    }
-
-    /// <summary>
-    /// 收到其他玩家输入
-    /// </summary>
-    private void OnPlayerInputReceived(PlayerInputEventData eventData)
-    {
-        // 存储其他玩家的输入，用于预测和插值
-        // 实际处理在 ApplyServerFrame 中
-    }
-
     #endregion
 
     #region 帧同步核心逻辑
@@ -254,7 +163,6 @@ public class FrameSyncManager : BaseManager<FrameSyncManager>
     {
         IsSyncing = true;
         CurrentFrameId = 0;
-        _frameHistory.Clear();
 
         Debug.Log("[FrameSyncManager] ▶️ 帧同步已启动");
     }
@@ -271,118 +179,43 @@ public class FrameSyncManager : BaseManager<FrameSyncManager>
     }
 
     /// <summary>
-    /// 收集本地玩家输入
+    /// 收到服务器帧状态（由 NetworkHandler 解析 S2C_FrameState 后直接调用，高频路径不过 EventBus）
+    /// 职责：更新本地帧号 + 把各玩家的权威位置分发给对应的远程玩家
     /// </summary>
-    private void CollectLocalInput()
+    public void OnServerFrame(GameNetwork.FrameStateResp frameState)
     {
-        _currentInput = new PlayerInput
-        {
-            Horizontal = UnityEngine.Input.GetAxis("Horizontal"),
-            Vertical = UnityEngine.Input.GetAxis("Vertical"),
-            Jump = UnityEngine.Input.GetButtonDown("Jump"),
-            Attack = UnityEngine.Input.GetButtonDown("Fire1")
-        };
-    }
+        CurrentFrameId = (int)frameState.FrameId;
 
-    /// <summary>
-    /// 发送输入到服务器
-    /// </summary>
-    private void SendInputToServer()
-    {
-        // 如果没有输入，不发送（节省带宽）
-        if (_currentInput.IsEmpty) return;
+        string localPlayerId = NetworkManager.Instance != null
+            ? NetworkManager.Instance.GetLocalPlayerId()
+            : "";
 
-        // 通过 NetworkManager 发送输入
-        // 这里可以优化为批量发送或固定频率发送
-        var networkManager = NetworkManager.Instance;
-        if (networkManager != null && networkManager.IsConnected)
+        foreach (var kvp in frameState.PlayerStates)
         {
-            // 构建输入消息（使用 Protobuf 生成的 PlayerInput 类）
-            // 注意：PlayerInput 没有 FrameId 字段，帧号由服务器分配
-            var inputMsg = new GameNetwork.PlayerInput
+            // 本地玩家：位置由本地物理权威，忽略服务器回传的自己
+            if (kvp.Key == localPlayerId) continue;
+
+            // 远程玩家：向服务器持有的权威位置做插值/纠正
+            var remote = PlayerManager.GetInstance()?.GetRemotePlayer(kvp.Key);
+            if (remote == null)
             {
-                MoveX = _currentInput.Horizontal,
-                MoveY = _currentInput.Vertical,
-                Fire = _currentInput.Attack,
-                Jump = _currentInput.Jump,
-            };
-
-            networkManager.SendPlayerInput(inputMsg);
-        }
-    }
-
-    /// <summary>
-    /// 处理帧同步（FixedUpdate）
-    /// </summary>
-    private void ProcessFrameSync()
-    {
-        if (!EnableClientPrediction) return;
-
-        // 客户端预测：根据当前输入预测下一帧位置
-        var localPlayer = PlayerManager.GetInstance()?.GetLocalPlayer();
-        if (localPlayer != null)
-        {
-            // 使用本地输入进行预测移动
-            localPlayer.PredictMovement(_currentInput.Horizontal, _currentInput.Vertical);
-        }
-    }
-
-    /// <summary>
-    /// 应用服务器帧数据
-    /// </summary>
-    private void ApplyServerFrame(FrameSyncUpdateEventData frameData)
-    {
-        // 更新远程玩家位置
-        foreach (var kvp in frameData.PlayerPositions)
-        {
-            string playerId = kvp.Key;
-            Vector3 position = kvp.Value;
-
-            // 跳过本地玩家（由客户端预测处理）
-            var localPlayer = PlayerManager.GetInstance()?.GetLocalPlayer();
-            if (localPlayer != null && localPlayer.PlayerId == playerId)
-            {
-                // 本地玩家：服务器回包校验
-                localPlayer.ServerReconciliation(position);
+                // 诊断：帧内出现本地没有的玩家ID，说明服务端玩家标识和本地房间成员不一致
+                if (frameState.FrameId % 30 == 0)
+                {
+                    Debug.LogWarning($"[FrameSyncManager] ⚠️ 帧#{frameState.FrameId} 内出现未知玩家 [{kvp.Key}]，" +
+                                     $"本地ID=[{localPlayerId}]，状态被丢弃");
+                }
                 continue;
             }
 
-            // 远程玩家：直接更新位置（带插值）
-            var remotePlayer = PlayerManager.GetInstance()?.GetRemotePlayer(playerId);
-            if (remotePlayer != null)
-            {
-                remotePlayer.SetTargetPosition(position);
-            }
+            remote.OnServerState(kvp.Value);
         }
-    }
 
-    #endregion
-
-    #region 公共方法
-
-    /// <summary>
-    /// 获取当前输入
-    /// </summary>
-    public PlayerInput GetCurrentInput()
-    {
-        return _currentInput;
-    }
-
-    /// <summary>
-    /// 获取指定帧的数据
-    /// </summary>
-    public FrameData GetFrameData(int frameId)
-    {
-        _frameHistory.TryGetValue(frameId, out var frameData);
-        return frameData;
-    }
-
-    /// <summary>
-    /// 清除帧历史
-    /// </summary>
-    public void ClearFrameHistory()
-    {
-        _frameHistory.Clear();
+        // 调试日志（每100帧输出一次）
+        if (frameState.FrameId % 100 == 0)
+        {
+            Debug.Log($"[FrameSyncManager] 🎮 帧 #{frameState.FrameId}, 位置状态: {frameState.PlayerStates.Count}");
+        }
     }
 
     #endregion
@@ -399,8 +232,6 @@ public class FrameSyncManager : BaseManager<FrameSyncManager>
         Debug.Log($"CurrentFrameId: {CurrentFrameId}");
         Debug.Log($"ServerFrameRate: {ServerFrameRate}");
         Debug.Log($"FrameInterval: {ServerFrameInterval:F4}s");
-        Debug.Log($"ClientPrediction: {EnableClientPrediction}");
-        Debug.Log($"FrameHistory: {_frameHistory.Count} frames");
         Debug.Log("=============================================");
     }
 

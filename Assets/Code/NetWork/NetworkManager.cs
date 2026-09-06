@@ -9,8 +9,10 @@ using GameNetwork;           // 引用 Proto 消息命名空间
 // 所以不需要 using GameEventBus; 直接写类名即可
 
 /// <summary>
-/// 客户端网络管理器
-/// 负责与服务器通信（UDP + Protobuf）
+/// 客户端网络管理器（纯传输层）
+/// 只负责：UDP 连接、心跳、协议打包/拆包、消息字节分发
+/// 不解析任何具体业务消息、不发布业务事件——
+/// 收到的消息字节由 NetworkHandler 解析后走 EventBus 或直调对应 Manager
 /// </summary>
 public class NetworkManager : MonoBehaviour
 {
@@ -64,20 +66,6 @@ public class NetworkManager : MonoBehaviour
 
     #endregion
 
-    #region 事件回调
-
-    /// <summary>
-    /// 登录成功事件 (userId, nickname)
-    /// </summary>
-    public event Action<string, string> OnLoginSuccess;
-
-    /// <summary>
-    /// 登录失败事件 (errorMessage)
-    /// </summary>
-    public event Action<string> OnLoginFailed;
-
-    #endregion
-
     #region Unity 生命周期
 
     private void Awake()
@@ -114,11 +102,16 @@ public class NetworkManager : MonoBehaviour
 
     private void OnDestroy()
     {
+        // 防止场景里误放的重复实例销毁时断开真身的连接
+        if (_instance != this) return;
+
         Disconnect();
     }
 
     private void OnApplicationQuit()
     {
+        if (_instance != this) return;
+
         Disconnect();
     }
 
@@ -208,29 +201,29 @@ public class NetworkManager : MonoBehaviour
 
     /// <summary>
     /// 发送登录请求到服务器
+    /// 返回 false 表示请求根本没发出去（未连接/重复登录/参数为空），
+    /// 服务器响应结果统一由 NetworkHandler 解析后发布 EventBus 事件
     /// </summary>
     /// <param name="username">用户名</param>
     /// <param name="password">密码（明文，服务端会进行MD5哈希验证）</param>
-    public void Login(string username, string password)
+    public bool Login(string username, string password)
     {
         if (!IsConnected)
         {
             Debug.LogError("[NetworkManager] 未连接服务器，无法登录");
-            OnLoginFailed?.Invoke("未连接到服务器");
-            return;
+            return false;
         }
 
         if (_isLoggedIn)
         {
             Debug.LogWarning("[NetworkManager] 已经登录，请勿重复登录");
-            return;
+            return true;
         }
 
         if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
         {
             Debug.LogWarning("[NetworkManager] 用户名或密码不能为空");
-            OnLoginFailed?.Invoke("用户名或密码不能为空");
-            return;
+            return false;
         }
 
         try
@@ -244,94 +237,25 @@ public class NetworkManager : MonoBehaviour
             Send(MsgID.C2SLogin, req);
 
             Debug.Log($"[NetworkManager] 📤 发送登录请求: {username}");
+            return true;
         }
         catch (Exception ex)
         {
             Debug.LogError($"[NetworkManager] ❌ 发送登录请求失败: {ex.Message}");
-            OnLoginFailed?.Invoke("发送登录请求失败");
+            return false;
         }
     }
 
     /// <summary>
-    /// 处理服务器返回的登录响应（由外部调用或注册回调后自动触发）
-    /// 🔑 核心改动：通过 EventBus 发布事件，实现模块解耦
+    /// 记录登录成功后的会话信息（由 NetworkHandler 在收到 S2C_Login 成功响应后调用）
+    /// NetworkManager 只保存状态，不做解析、不发事件
     /// </summary>
-    /// <param name="data">Protobuf序列化的 LoginResp 数据</param>
-    public void OnLoginResponse(byte[] data)
+    public void ApplyLoginSuccess(string userId, string username, string token)
     {
-        try
-        {
-            var resp = LoginResp.Parser.ParseFrom(data);
-
-            if (resp.Success)
-            {
-                // ✅ 登录成功：保存本地玩家信息（纯数据，不依赖任何GameObject）
-                _localPlayerId = resp.UserId;        // 👈 关键！保存服务端分配的唯一ID
-                _localPlayerName = resp.Username;     // 保存昵称
-                _sessionToken = resp.Token;           // 保存会话令牌
-                _isLoggedIn = true;
-
-                Debug.Log($"✅ [NetworkManager] 登录成功！");
-                Debug.Log($"   👤 用户ID: {_localPlayerId}");
-                Debug.Log($"   😊 昵称: {_localPlayerName}");
-                Debug.Log($"   🔑 Token: {(_sessionToken.Length > 8 ? _sessionToken.Substring(0, 8) + "..." : _sessionToken)}");
-
-                // ============================================
-                // 🔑🔑🔑 关键改动：发布事件到 EventBus（而非直接调用委托）
-                // ============================================
-                
-                // 1️⃣ 创建事件数据对象
-                var loginEventData = LoginSuccessEventData.Create(
-                    userId: _localPlayerId,
-                    username: _localPlayerName,
-                    token: _sessionToken,
-                    expireTime: resp.ExpireTime
-                );
-
-                // 2️⃣ 发布登录成功事件到总线（所有订阅者都会收到）
-                GameEventBus.GetInstance().Publish(
-                    GameEventType.OnLoginSuccess, 
-                    loginEventData
-                );
-
-                Debug.Log($"[NetworkManager] 📢 已发布 OnLoginSuccess 事件到 EventBus: {loginEventData}");
-
-                // 3️⃣ （兼容性保留）同时触发旧的委托事件（后续可移除）
-                OnLoginSuccess?.Invoke(_localPlayerId, _localPlayerName);
-            }
-            else
-            {
-                // ❌ 登录失败
-                Debug.LogError($"❌ [NetworkManager] 登录失败: {resp.Message}");
-
-                // 🔑 登录失败时断开连接，停止心跳
-                Disconnect();
-                Debug.Log("[NetworkManager] 🔌 登录失败，已断开连接并停止心跳");
-
-                // 发布登录失败事件到 EventBus
-                var failedEventData = LoginFailedEventData.Create(resp.Message);
-                GameEventBus.GetInstance().Publish(
-                    GameEventType.OnLoginFailed,
-                    failedEventData
-                );
-
-                // （兼容性保留）旧的委托事件
-                OnLoginFailed?.Invoke(resp.Message);
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"❌ [NetworkManager] 处理登录响应异常: {ex.Message}");
-            
-            // 发布异常事件
-            var errorEventData = LoginFailedEventData.Create("响应解析失败");
-            GameEventBus.GetInstance().Publish(
-                GameEventType.OnLoginFailed,
-                errorEventData
-            );
-            
-            OnLoginFailed?.Invoke("响应解析失败");
-        }
+        _localPlayerId = userId;
+        _localPlayerName = username;
+        _sessionToken = token;
+        _isLoggedIn = true;
     }
 
     /// <summary>
@@ -408,52 +332,6 @@ public class NetworkManager : MonoBehaviour
     public void UnregisterHandler(MsgID msgId)
     {
         _messageHandlers.Remove(msgId);
-    }
-
-    /// <summary>
-    /// 发送玩家输入到服务器（帧同步用）
-    /// </summary>
-    public void SendPlayerInput(GameNetwork.PlayerInput input)
-    {
-        Send(MsgID.C2SPlayerInput, input);
-    }
-
-    /// <summary>
-    /// 请求房间列表
-    /// </summary>
-    public void SendGetRoomList()
-    {
-        if (!_isLoggedIn)
-        {
-            Debug.LogWarning("[NetworkManager] 未登录，无法获取房间列表");
-            return;
-        }
-
-        var req = new GetRoomListReq();
-        Send(MsgID.C2SGetRoomList, req);
-        Debug.Log("[NetworkManager] 📤 发送获取房间列表请求");
-    }
-
-    /// <summary>
-    /// 创建房间
-    /// </summary>
-    /// <param name="roomName">房间名称</param>
-    /// <param name="password">房间密码（空表示无密码）</param>
-    public void SendCreateRoom(string roomName = "", string password = "")
-    {
-        if (!_isLoggedIn)
-        {
-            Debug.LogWarning("[NetworkManager] 未登录，无法创建房间");
-            return;
-        }
-
-        var req = new CreateRoomReq
-        {
-            RoomName = roomName,
-            Password = password
-        };
-        Send(MsgID.C2SCreateRoom, req);
-        Debug.Log($"[NetworkManager] 📤 发送创建房间请求: {roomName}");
     }
 
     #endregion

@@ -186,14 +186,27 @@ public class JoinedRoomEventData : GameEventData
 /// <summary>
 /// 加入房间失败事件数据
 /// </summary>
-public class JoinRoomFailedEventData:GameEventData
+public class JoinRoomFailedEventData : GameEventData
 {
     public string RoomId { get; set; } = "";
     public string Reason { get; set; } = "";
 
-    public static LeftRoomEventData Create(string roomId, string reason = "")
+    public static JoinRoomFailedEventData Create(string roomId, string reason = "")
     {
-        return new LeftRoomEventData { RoomId = roomId, Reason = reason };
+        return new JoinRoomFailedEventData { RoomId = roomId, Reason = reason };
+    }
+}
+
+/// <summary>
+/// 创建房间失败事件数据
+/// </summary>
+public class RoomCreateFailedEventData : GameEventData
+{
+    public string Reason { get; set; } = "";
+
+    public static RoomCreateFailedEventData Create(string reason = "")
+    {
+        return new RoomCreateFailedEventData { Reason = reason };
     }
 }
 
@@ -272,82 +285,6 @@ public class PlayerLeftRoomEventData : GameEventData
     public static PlayerLeftRoomEventData Create(string playerId)
     {
         return new PlayerLeftRoomEventData { PlayerId = playerId };
-    }
-}
-
-#endregion
-
-#region 帧同步事件数据
-
-/// <summary>
-/// 帧同步更新事件数据（增强版，包含玩家位置）
-/// </summary>
-public class FrameSyncUpdateEventData : GameEventData
-{
-    /// <summary>
-    /// 当前帧ID
-    /// </summary>
-    public int FrameId { get; set; } = 0;
-
-    /// <summary>
-    /// 服务器时间戳
-    /// </summary>
-    public long ServerTime { get; set; } = 0;
-
-    /// <summary>
-    /// 在线玩家输入数量
-    /// </summary>
-    public int InputCount { get; set; } = 0;
-
-    /// <summary>
-    /// 玩家位置字典 (playerId → position)
-    /// </summary>
-    public Dictionary<string, Vector3> PlayerPositions { get; set; } = new Dictionary<string, Vector3>();
-
-    /// <summary>
-    /// 原始 Protobuf 数据（可选，用于底层处理）
-    /// </summary>
-    public byte[] RawData { get; set; } = Array.Empty<byte>();
-
-    public static FrameSyncUpdateEventData Create(int frameId, long serverTime, int inputCount)
-    {
-        return new FrameSyncUpdateEventData
-        {
-            FrameId = frameId,
-            ServerTime = serverTime,
-            InputCount = inputCount
-        };
-    }
-
-    public override string ToString()
-    {
-        return $"[FrameSync] Frame#{FrameId}, Inputs={InputCount}, Time={ServerTime}";
-    }
-}
-
-/// <summary>
-/// 玩家输入事件数据
-/// </summary>
-public class PlayerInputEventData : GameEventData
-{
-    public string PlayerId { get; set; } = "";
-    public int FrameId { get; set; } = 0;
-    public float Horizontal { get; set; } = 0;
-    public float Vertical { get; set; } = 0;
-    public bool Jump { get; set; } = false;
-    public bool Attack { get; set; } = false;
-
-    public static PlayerInputEventData Create(string playerId, int frameId, float h, float v, bool jump, bool attack)
-    {
-        return new PlayerInputEventData
-        {
-            PlayerId = playerId,
-            FrameId = frameId,
-            Horizontal = h,
-            Vertical = v,
-            Jump = jump,
-            Attack = attack
-        };
     }
 }
 

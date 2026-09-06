@@ -35,6 +35,10 @@ public class LobbyUIController : MonoBehaviour
     [Tooltip("提示文本")]
     public Text Text_Message;
 
+    [Header("配置")]
+    [Tooltip("加入房间成功后跳转的场景名")]
+    public string roomSceneName = "Room";
+
     #endregion
 
     #region 私有字段
@@ -48,6 +52,14 @@ public class LobbyUIController : MonoBehaviour
 
     private void Start()
     {
+        // 🔑 确保房间管理器在大厅就完成 EventBus 订阅。
+        // RoomManager.Initialize() 原本只在 Main 场景的 GameInitializer 里调用，
+        // 导致大厅里"加入房间成功"事件发出时 RoomManager 还没订阅，
+        // CurrentRoom 不会被赋值，Room 场景的 UI 读不到房间数据。
+        // RoomManager 是纯 C# 单例，Initialize 有 _isInitialized 防重入，
+        // 这里提前初始化不影响 Main 场景的 GameInitializer 流程。
+        RoomManager.GetInstance().Initialize();
+
         // 绑定按钮事件
         if (Btn_CreateRoom != null)
         {
@@ -80,6 +92,18 @@ public class LobbyUIController : MonoBehaviour
         eventBus.Subscribe<RoomCreatedEventData>(
             GameEventType.OnRoomCreated,
             HandleRoomCreated
+        );
+        eventBus.Subscribe<RoomCreateFailedEventData>(
+            GameEventType.OnRoomCreateFailed,
+            HandleRoomCreateFailed
+        );
+        eventBus.Subscribe<JoinRoomFailedEventData>(
+            GameEventType.OnJoinRoomFailed,
+            HandleJoinRoomFailed
+        );
+        eventBus.Subscribe<JoinedRoomEventData>(
+            GameEventType.OnJoinedRoom,
+            HandleJoinedRoom
         );
 
         ShowMessage("欢迎来到大厅", Color.white);
@@ -114,6 +138,18 @@ public class LobbyUIController : MonoBehaviour
             GameEventType.OnRoomCreated,
             HandleRoomCreated
         );
+        eventBus.Unsubscribe<RoomCreateFailedEventData>(
+            GameEventType.OnRoomCreateFailed,
+            HandleRoomCreateFailed
+        );
+        eventBus.Unsubscribe<JoinRoomFailedEventData>(
+            GameEventType.OnJoinRoomFailed,
+            HandleJoinRoomFailed
+        );
+        eventBus.Unsubscribe<JoinedRoomEventData>(
+            GameEventType.OnJoinedRoom,
+            HandleJoinedRoom
+        );
     }
 
     #endregion
@@ -134,8 +170,8 @@ public class LobbyUIController : MonoBehaviour
         _isProcessing = true;
         ShowMessage("正在创建房间...", Color.cyan);
 
-        // 发送创建房间请求（默认房间名，无密码）
-        NetworkManager.Instance.SendCreateRoom(
+        // 通过 RoomManager 发送创建房间请求（默认房间名，无密码）
+        RoomManager.GetInstance().CreateRoom(
             roomName: $"Room_{NetworkManager.Instance.GetLocalPlayerId()}",
             password: ""
         );
@@ -173,7 +209,7 @@ public class LobbyUIController : MonoBehaviour
 
         // 请求房间列表
         ShowMessage("正在获取房间列表...", Color.cyan);
-        NetworkManager.Instance.SendGetRoomList();
+        RoomManager.GetInstance().RequestRoomList();
     }
 
     /// <summary>
@@ -225,18 +261,53 @@ public class LobbyUIController : MonoBehaviour
     }
 
     /// <summary>
-    /// 房间创建成功
+    /// 房间创建成功 → 跳转房间等待界面（和加入房间走同一个 Room 场景）
     /// </summary>
     private void HandleRoomCreated(RoomCreatedEventData eventData)
     {
         _isProcessing = false;
         CancelInvoke(nameof(ResetProcessing));
 
-        Debug.Log($"[LobbyUI] 房间创建成功: {eventData.RoomId}");
+        Debug.Log($"[LobbyUI] 房间创建成功: {eventData.RoomId}，跳转房间界面");
         ShowMessage($"房间创建成功！ID: {eventData.RoomId}", Color.green);
 
-        // TODO: 后续可以跳转到房间等待界面
-        // 目前只是显示成功信息
+        if (!string.IsNullOrEmpty(roomSceneName))
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene(roomSceneName);
+        }
+    }
+
+    /// <summary>
+    /// 房间创建失败
+    /// </summary>
+    private void HandleRoomCreateFailed(RoomCreateFailedEventData eventData)
+    {
+        _isProcessing = false;
+        CancelInvoke(nameof(ResetProcessing));
+
+        ShowMessage($"❌ 创建房间失败: {eventData.Reason}", Color.red);
+    }
+
+    /// <summary>
+    /// 加入房间失败
+    /// </summary>
+    private void HandleJoinRoomFailed(JoinRoomFailedEventData eventData)
+    {
+        ShowMessage($"❌ 加入房间失败: {eventData.Reason}", Color.red);
+    }
+
+    /// <summary>
+    /// 加入房间成功 → 跳转房间等待界面
+    /// （房间状态由 RoomManager 维护，RoomUIController 进场景后会自己读 CurrentRoom 渲染）
+    /// </summary>
+    private void HandleJoinedRoom(JoinedRoomEventData eventData)
+    {
+        Debug.Log($"[LobbyUI] 加入房间成功: {eventData.RoomId}，跳转房间界面");
+
+        if (!string.IsNullOrEmpty(roomSceneName))
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene(roomSceneName);
+        }
     }
 
     #endregion
@@ -258,9 +329,9 @@ public class LobbyUIController : MonoBehaviour
         GameObject item = Instantiate(RoomItemPrefab, RoomListContent);
         _roomItemList.Add(item);
 
-        // 设置文本（假设预制体有Text子对象）
+        // 设置文本（预制体应有6个Text子对象：ID/名称/房主/人数/密码/状态）
         var texts = item.GetComponentsInChildren<Text>();
-        if (texts.Length >= 5)
+        if (texts.Length >= 6)
         {
             texts[0].text = roomInfo.RoomId;           // 房间ID
             texts[1].text = roomInfo.RoomName;         // 房间名称
@@ -289,8 +360,7 @@ public class LobbyUIController : MonoBehaviour
         Debug.Log($"[LobbyUI] 点击加入房间: {roomId}");
         ShowMessage($"正在加入房间 {roomId}...", Color.cyan);
 
-        // TODO: 实现加入房间逻辑
-        // NetworkManager.Instance.SendJoinRoom(roomId);
+        RoomManager.GetInstance().JoinRoom(roomId);
     }
 
     /// <summary>

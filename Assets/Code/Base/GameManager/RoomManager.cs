@@ -1,11 +1,13 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using GameNetwork;
 
 /// <summary>
 /// 房间管理器
-/// 负责管理房间状态、房间列表、当前房间信息
-/// 通过 EventBus 订阅网络事件，更新房间状态
-/// 
+/// 职责：
+/// 1. 发送房间相关请求（创建/加入/离开/列表/开始游戏）——UI 只跟本类说话
+/// 2. 订阅 EventBus 网络事件，维护 CurrentRoom 房间状态
+///
 /// 🔑 继承 BaseManager 实现单例模式
 /// </summary>
 public class RoomManager : BaseManager<RoomManager>
@@ -60,6 +62,14 @@ public class RoomManager : BaseManager<RoomManager>
     // 房间列表缓存
     private Dictionary<string, RoomInfo> _roomList = new Dictionary<string, RoomInfo>();
 
+    // 当前是否已订阅 EventBus。
+    // 注意：不能用静态的"已初始化"标志代替——GameInitializer.OnDestroy 会在场景切换时退订，
+    // 如果 Initialize 因静态标志早退，就会永远失去订阅（CurrentRoom 不再更新）
+    private bool _subscribedToEventBus = false;
+
+    // 创建房间时使用的房间名（CreateRoomResp 不回显房间名，创建响应到达时取回）
+    private string _pendingRoomName = "";
+
     // 是否已初始化
     private bool _isInitialized = false;
 
@@ -72,12 +82,17 @@ public class RoomManager : BaseManager<RoomManager>
     /// </summary>
     public void Initialize()
     {
-        if (_isInitialized) return;
+        if (!_isInitialized)
+        {
+            _isInitialized = true;
+            Debug.Log("[RoomManager] ✅ 初始化完成");
+        }
+
+        // 订阅状态单独跟踪：退订后再次 Initialize 可以恢复订阅
+        if (_subscribedToEventBus) return;
 
         SubscribeToEventBus();
-
-        _isInitialized = true;
-        Debug.Log("[RoomManager] ✅ 初始化完成");
+        _subscribedToEventBus = true;
     }
 
     /// <summary>
@@ -97,6 +112,12 @@ public class RoomManager : BaseManager<RoomManager>
         eventBus.Subscribe<RoomListUpdatedEventData>(
             GameEventType.OnRoomListUpdated,
             OnRoomListUpdated
+        );
+
+        // 房间创建成功（创建者走这条路径，加入者走 OnJoinedRoom）
+        eventBus.Subscribe<RoomCreatedEventData>(
+            GameEventType.OnRoomCreated,
+            OnRoomCreated
         );
 
         // 加入房间成功
@@ -143,6 +164,8 @@ public class RoomManager : BaseManager<RoomManager>
     /// </summary>
     public void UnsubscribeFromEventBus()
     {
+        if (!_subscribedToEventBus) return;
+
         var eventBus = GameEventBus.GetInstance();
 
         eventBus.Unsubscribe<LoginSuccessEventData>(
@@ -153,6 +176,11 @@ public class RoomManager : BaseManager<RoomManager>
         eventBus.Unsubscribe<RoomListUpdatedEventData>(
             GameEventType.OnRoomListUpdated,
             OnRoomListUpdated
+        );
+
+        eventBus.Unsubscribe<RoomCreatedEventData>(
+            GameEventType.OnRoomCreated,
+            OnRoomCreated
         );
 
         eventBus.Unsubscribe<JoinedRoomEventData>(
@@ -184,6 +212,9 @@ public class RoomManager : BaseManager<RoomManager>
             GameEventType.OnGameOver,
             OnGameEnded
         );
+
+        _subscribedToEventBus = false;
+        Debug.Log("[RoomManager] 📡 已取消 EventBus 订阅");
     }
 
     #endregion
@@ -211,6 +242,41 @@ public class RoomManager : BaseManager<RoomManager>
         {
             _roomList[room.RoomId] = room;
         }
+    }
+
+    /// <summary>
+    /// 房间创建成功 → 初始化创建者的房间状态
+    /// CreateRoomResp 只带回房间ID和名称，所以本地自行组装：
+    /// 创建者自己就是房主和第一个成员，人数上限先用默认值
+    /// </summary>
+    private void OnRoomCreated(RoomCreatedEventData eventData)
+    {
+        string localId = NetworkManager.Instance != null
+            ? NetworkManager.Instance.GetLocalPlayerId()
+            : "";
+
+        CurrentRoom = new RoomInfo
+        {
+            RoomId = eventData.RoomId,
+            // CreateRoomResp 不回显房间名，用创建时本地记录的名字
+            RoomName = string.IsNullOrEmpty(_pendingRoomName) ? eventData.RoomId : _pendingRoomName,
+            HostPlayerId = localId,
+            PlayerIds = new List<string> { localId },
+            MaxPlayers = 4
+        };
+
+        Debug.Log($"[RoomManager] 🏠 房间创建成功: {CurrentRoom.RoomName} ({CurrentRoom.RoomId})，我是房主");
+
+        // 发布房间状态变更事件
+        GameEventBus.GetInstance().Publish(
+            GameEventType.OnRoomStateChanged,
+            new RoomStateChangedEventData
+            {
+                IsInRoom = true,
+                RoomId = CurrentRoom.RoomId,
+                PlayerCount = CurrentRoom.CurrentPlayerCount
+            }
+        );
     }
 
     /// <summary>
@@ -340,8 +406,95 @@ public class RoomManager : BaseManager<RoomManager>
 
     #region 公共方法
 
+    #region 房间请求（发送方向）
+
     /// <summary>
-    /// 获取房间列表
+    /// 创建房间
+    /// </summary>
+    public void CreateRoom(string roomName = "", string password = "")
+    {
+        if (!CheckLoggedIn()) return;
+
+        _pendingRoomName = roomName;
+
+        var req = new CreateRoomReq
+        {
+            RoomName = roomName,
+            Password = password
+        };
+        NetworkManager.Instance.Send(MsgID.C2SCreateRoom, req);
+        Debug.Log($"[RoomManager] 📤 发送创建房间请求: {roomName}");
+    }
+
+    /// <summary>
+    /// 加入房间
+    /// </summary>
+    public void JoinRoom(string roomId, string password = "")
+    {
+        if (!CheckLoggedIn()) return;
+
+        var req = new JoinRoomReq
+        {
+            RoomId = roomId,
+            Password = password
+        };
+        NetworkManager.Instance.Send(MsgID.C2SJoinRoom, req);
+        Debug.Log($"[RoomManager] 📤 发送加入房间请求: {roomId}");
+    }
+
+    /// <summary>
+    /// 请求房间列表
+    /// </summary>
+    public void RequestRoomList()
+    {
+        if (!CheckLoggedIn()) return;
+
+        NetworkManager.Instance.Send(MsgID.C2SGetRoomList, new GetRoomListReq());
+        Debug.Log("[RoomManager] 📤 发送获取房间列表请求");
+    }
+
+    /// <summary>
+    /// 离开当前房间
+    /// </summary>
+    public void LeaveRoom()
+    {
+        if (!CheckLoggedIn()) return;
+
+        NetworkManager.Instance.Send(MsgID.C2SLeaveRoom, new LeaveRoomReq
+        {
+            RoomId = CurrentRoom?.RoomId ?? ""
+        });
+        Debug.Log("[RoomManager] 📤 发送离开房间请求");
+    }
+
+    /// <summary>
+    /// 房主开始游戏
+    /// </summary>
+    public void StartGame()
+    {
+        if (!CheckLoggedIn()) return;
+
+        NetworkManager.Instance.Send(MsgID.C2SStartGame, new StartGameReq());
+        Debug.Log("[RoomManager] 📤 发送开始游戏请求");
+    }
+
+    /// <summary>
+    /// 请求发送前的登录检查
+    /// </summary>
+    private bool CheckLoggedIn()
+    {
+        if (NetworkManager.Instance == null || !NetworkManager.Instance.IsLoggedIn)
+        {
+            Debug.LogWarning("[RoomManager] 未登录，无法发送房间请求");
+            return false;
+        }
+        return true;
+    }
+
+    #endregion
+
+    /// <summary>
+    /// 获取房间列表缓存
     /// </summary>
     public Dictionary<string, RoomInfo> GetRoomList()
     {

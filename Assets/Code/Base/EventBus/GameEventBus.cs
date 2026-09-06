@@ -9,6 +9,9 @@ public class GameEventBus :BaseManager<GameEventBus>
 {
     private Dictionary<GameEventType, List<Delegate>> eventListeners = new Dictionary<GameEventType, List<Delegate>>();
 
+    // 诊断用：总线实例标识（用于确认全局只有一条总线）
+    public readonly long BusId = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
     //订阅事件 把观察者的回调函数添加到事件字典中
     public void Subscribe<T>(GameEventType eventType,Action<T> listener)//事件类型 回调函数 通过GameEventType和泛型参数T来指定事件类型和回调函数的参数类型
         where T : GameEventData
@@ -47,7 +50,7 @@ public class GameEventBus :BaseManager<GameEventBus>
     // 简化版发布（无参数事件）
     public void Publish(GameEventType eventType)
     {
-        if (eventListeners.TryGetValue(eventType, out var listeners))//如果事件类型存在，则获取对应的回调列表
+        if (eventListeners.TryGetValue(eventType, out var listeners))
         {
             foreach (var listener in listeners)
             {

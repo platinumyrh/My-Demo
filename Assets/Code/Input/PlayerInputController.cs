@@ -37,6 +37,7 @@ public class PlayerInputController : MonoBehaviour
         _inputActions.Gameplay.Fire.canceled += ctx => _fire = false;
         _inputActions.Gameplay.Jump.performed += ctx => _jump = true;
         _inputActions.Gameplay.Jump.canceled += ctx => _jump = false;
+        _inputActions.Gameplay.Jump.canceled += ctx => _jump = false;
     }
 
     private void OnEnable()

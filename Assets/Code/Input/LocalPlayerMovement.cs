@@ -117,6 +117,11 @@ public class LocalPlayerMovement : MonoBehaviour
     {
         if (!NetworkManager.Instance.IsConnected) return;
 
+        // 只在帧同步进行中（服务器广播游戏开始后）才收集/发送输入
+        // 否则在大厅/房间界面就会开始发包，服务端也会收到无主输入
+        var frameSync = FrameSyncManager.GetInstance();
+        if (frameSync == null || !frameSync.IsSyncing) return;
+
         // 1. 获取当前输入
         var inputReq = _playerInput.GetCurrentInput(_localFrameId);
 
@@ -189,16 +194,21 @@ public class LocalPlayerMovement : MonoBehaviour
 
     /// <summary>
     /// 发送当前输入状态到服务器
+    /// 输入 + 自己的权威位置一起上报：
+    /// 本地位置经过 CharacterController 物理碰撞，是本角色的真实位置，
+    /// 服务端持有后广播给其他玩家做位置纠正
     /// </summary>
     private void SendInputToServer(PlayerInputReq input)
     {
         try
         {
+            // 附带权威位置状态
+            input.PosX = transform.position.x;
+            input.PosY = transform.position.y;
+            input.PosZ = transform.position.z;
+            input.RotY = transform.eulerAngles.y;
+
             NetworkManager.Instance.Send(MsgID.C2SPlayerInput, input);
-            
-            // 调试日志（可以关闭以提升性能）
-            // Debug.Log($"[LocalPlayer] 发送输入 Frame#{input.FrameId}: " +
-            //          $"Move({input.MoveX:F1}, {input.MoveY:F1}) Fire={input.Fire}");
         }
         catch (System.Exception ex)
         {

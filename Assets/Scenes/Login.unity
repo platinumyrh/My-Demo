@@ -131,7 +131,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 44851966}
-  - component: {fileID: 44851965}
+  - component: {fileID: 44851967}
   m_Layer: 0
   m_Name: Entry
   m_TagString: Untagged
@@ -139,22 +139,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &44851965
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 44851964}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 418bc3817cc76a34e9ca99ce7a5ccb5d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  localPlayerPrefab: {fileID: 2448797306691859207, guid: 049fee6382e555f48b07ea4ed9a6fbf7, type: 3}
-  remotePlayerPrefab: {fileID: 8546965822301457256, guid: 384a1d65c1920284f9335730fddf39ed, type: 3}
-  localPlayerSpawnPosition: {x: 0, y: 0, z: 0}
-  remotePlayerSpawnRadius: 5
 --- !u!4 &44851966
 Transform:
   m_ObjectHideFlags: 0
@@ -170,6 +154,24 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &44851967
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 44851964}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86bf711dd5ce2604a8eb398a54bc96bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  autoInitOnStart: 1
+  startSceneName: 
+  bootUIPath: 
+  canvasTransform: {fileID: 509432095}
+  skipUpdateCheck: 1
+  enableResourceCache: 0
 --- !u!1 &114758734
 GameObject:
   m_ObjectHideFlags: 0

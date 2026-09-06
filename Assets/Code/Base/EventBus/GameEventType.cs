@@ -99,6 +99,11 @@ public enum GameEventType
     OnRoomCreated,
 
     /// <summary>
+    /// 房间创建失败
+    /// </summary>
+    OnRoomCreateFailed,
+
+    /// <summary>
     /// 加入房间成功
     /// </summary>
     OnJoinedRoom,
@@ -124,11 +129,6 @@ public enum GameEventType
     OnPlayerLeftRoom,
 
     /// <summary>
-    /// 收到房间列表
-    /// </summary>
-    OnRoomListReceived,
-
-    /// <summary>
     /// 房间列表更新
     /// </summary>
     OnRoomListUpdated,
@@ -140,22 +140,10 @@ public enum GameEventType
 
     #endregion
 
-    #region 🔑 帧同步事件（新增）
+    #region 🔑 帧同步事件
 
-    /// <summary>
-    /// 帧状态更新（服务器广播的帧同步数据）
-    /// </summary>
-    OnFrameSyncUpdate,
-
-    /// <summary>
-    /// 玩家输入确认（服务器确认收到输入）
-    /// </summary>
-    OnInputConfirmed,
-
-    /// <summary>
-    /// 收到其他玩家输入
-    /// </summary>
-    OnPlayerInputReceived,
+    // 注意：帧同步数据（S2C_FrameState）是高频消息，不走 EventBus，
+    // 由 NetworkHandler 解析后直接调用 FrameSyncManager.OnServerFrame
 
     #endregion
 
