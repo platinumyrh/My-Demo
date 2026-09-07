@@ -14,11 +14,27 @@ public class LocalPlayerMovement : MonoBehaviour
     [Header("移动参数")]
     public float walkSpeed = 5f;
     public float sprintSpeed = 8f;
-    public float rotationSpeed = 10f;
+
+    [Header("瞄准")]
+    [Tooltip("每秒最大转身角度（度）。俯视角射击要跟手，建议给很大：1080 = 1/3 秒转一圈")]
+    public float turnSpeed = 1080f;
+
+    [Tooltip("鼠标射线打在哪一层（只勾 Ground / 地面即可，能省一次全场景射线）")]
+    public LayerMask groundLayer = ~0;
+
+    [Tooltip("瞄准平面相对角色脚底的高度偏移。0 = 与角色同高")]
+    public float aimPlaneOffset = 0f;
+
+    [Tooltip("枪口挂点。留空则用角色中心前方 0.6m（将来做射击时填真实枪口）")]
+    public Transform muzzle;
 
     [Header("网络同步")]
     [Tooltip("每秒发送多少次输入到服务器")]
     public int sendRate = 30; // 与服务器帧率一致
+
+    [Header("调试可视化")]
+    [Tooltip("画出瞄准射线（Scene视图常显，Game视图需开Gizmos）")]
+    public bool drawAimRays = true;
 
     #endregion
 
@@ -26,12 +42,27 @@ public class LocalPlayerMovement : MonoBehaviour
 
     private CharacterController _controller;
     private PlayerInputController _playerInput;
+    private PlayerAnimationController _anim;
     private uint _localFrameId;  // 本地帧ID（客户端预测用）
     private float _sendTimer;
 
     // 客户端预测相关
     private Vector3 _predictedPosition;
     private Quaternion _predictedRotation;
+
+    // 瞄准相关
+    private float _aimAngleDeg;      // 目标朝向（Y 轴欧拉角，度）
+    private Vector3 _lastPosition;   // 上一帧位置（算真实速度用）
+
+    #endregion
+
+    #region 公开属性（瞄准）
+
+    /// <summary>鼠标在地面上的投影点（世界坐标），即准星指向的位置</summary>
+    public Vector3 AimPoint { get; private set; }
+
+    /// <summary>是否已经算出有效瞄准点（相机没准备好时为 false）</summary>
+    public bool HasAimPoint { get; private set; }
 
     #endregion
 
@@ -41,9 +72,16 @@ public class LocalPlayerMovement : MonoBehaviour
     {
         _controller = GetComponent<CharacterController>();
         _playerInput = GetComponent<PlayerInputController>();
+        _anim = PlayerAnimationController.Resolve(transform);
         _localFrameId = 0;
         _predictedPosition = transform.position;
         _predictedRotation = transform.rotation;
+        _lastPosition = transform.position;
+
+        if (_anim == null)
+        {
+            Debug.LogWarning($"[LocalPlayerMovement] ⚠️ [{gameObject.name}] 找不到 Animator，角色不会有动画表现");
+        }
     }
 
     #endregion
@@ -122,13 +160,20 @@ public class LocalPlayerMovement : MonoBehaviour
         var frameSync = FrameSyncManager.GetInstance();
         if (frameSync == null || !frameSync.IsSyncing) return;
 
-        // 1. 获取当前输入
+        // 1. 先算瞄准：鼠标 → 世界瞄准点 → 目标朝向（必须早于 GetCurrentInput，Rotation 要写进包里）
+        UpdateAim();
+        DrawAimDebug();
+
+        // 2. 获取当前输入
         var inputReq = _playerInput.GetCurrentInput(_localFrameId);
 
-        // 2. 立即本地移动（客户端预测）⭐ 关键！
+        // 3. 立即本地移动（客户端预测）⭐ 关键！
         MoveLocally(inputReq);
 
-        // 3. 定时发送输入到服务器
+        // 4. 用"真实位移"驱动动画（不是用输入意图，撞墙时速度自然归零）
+        UpdateAnimation(inputReq);
+
+        // 5. 定时发送输入到服务器
         _sendTimer += Time.deltaTime;
         if (_sendTimer >= 1f / sendRate)
         {
@@ -176,16 +221,142 @@ public class LocalPlayerMovement : MonoBehaviour
         // 移动角色
         _controller.Move(finalMove);
 
-        // 更新视角旋转
-        if (input.IsAiming || Mathf.Abs(input.Rotation) > 0.01f)
-        {
-            Quaternion targetRotation = Quaternion.Euler(0, input.Rotation * Mathf.Rad2Deg, 0);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-        }
+        // 转向：始终面向鼠标（俯视角射击的核心手感）
+        ApplyRotation();
 
         // 保存预测位置（用于后续校正）
         _predictedPosition = transform.position;
         _predictedRotation = transform.rotation;
+    }
+
+    /// <summary>
+    /// 以有限角速度转向目标朝向，帧率无关
+    /// </summary>
+    private void ApplyRotation()
+    {
+        if (!HasAimPoint) return;
+
+        float next = Mathf.MoveTowardsAngle(
+            transform.eulerAngles.y,
+            _aimAngleDeg,
+            turnSpeed * Time.deltaTime
+        );
+        transform.rotation = Quaternion.Euler(0f, next, 0f);
+    }
+
+    #endregion
+
+    #region 核心方法 - 鼠标瞄准
+
+    /// <summary>
+    /// 屏幕鼠标位置 → 世界瞄准点 → 目标朝向（弧度写进协议包）
+    ///
+    /// 瞄准点用"摄像机射线打场景几何"获得（地面/障碍物/玩家都算）：
+    /// 准星指近处地面 → 枪口到该点自然带俯角；指远处 → 接近平射。
+    /// 若什么都没打到，退回"与角色同高的水平面"交点。
+    ///
+    /// 朝向规则（方案 A）：角色朝向只取水平投影（yaw），
+    /// 俯仰只体现在弹道方向（GetAimDirection），角色模型不倾斜。
+    /// </summary>
+    private void UpdateAim()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) return;
+
+        Ray ray = cam.ScreenPointToRay(_playerInput.LookScreenPosition);
+
+        // 优先：射线打场景几何（带俯仰的真实瞄准点）
+        if (Physics.Raycast(ray, out RaycastHit sceneHit, 1000f, groundLayer, QueryTriggerInteraction.Ignore))
+        {
+            SetAimPoint(sceneHit.point);
+            return;
+        }
+
+        // 兜底：与角色同高的水平面
+        var plane = new Plane(Vector3.up,
+            new Vector3(0f, transform.position.y + aimPlaneOffset, 0f));
+
+        if (!plane.Raycast(ray, out float hitDistance)) return;
+
+        SetAimPoint(ray.GetPoint(hitDistance));
+    }
+
+    /// <summary>设置瞄准点并计算角色朝向角</summary>
+    private void SetAimPoint(Vector3 worldPoint)
+    {
+        Vector3 dir = worldPoint - transform.position;
+
+        // 鼠标几乎压在角色身上：保持上一帧朝向，避免抖动
+        Vector3 flat = dir;
+        flat.y = 0f;
+        if (flat.sqrMagnitude < 0.0004f) return;
+
+        AimPoint = worldPoint;
+        HasAimPoint = true;
+
+        // atan2(x, z) 才是 Unity 里 Y 轴欧拉角（0° 朝 +Z）；朝向只用水平分量
+        _aimAngleDeg = Mathf.Atan2(flat.x, flat.z) * Mathf.Rad2Deg;
+
+        // 协议里 rotation 字段是弧度
+        _playerInput.UpdateRotation(_aimAngleDeg * Mathf.Deg2Rad);
+    }
+
+    /// <summary>枪口世界坐标（没配枪口就用角色前方 0.6m、离地 1m 处）</summary>
+    public Vector3 GetMuzzlePosition()
+    {
+        return muzzle != null
+            ? muzzle.position
+            : transform.position + transform.forward * 0.6f + Vector3.up * 1f;
+    }
+
+    /// <summary>
+    /// 调试可视化：
+    /// 黄线 = 玩家 → 准星（角色朝向线，纯水平）
+    /// 青线 = 枪口 → 准星（实际弹道方向，带俯仰）
+    /// </summary>
+    private void DrawAimDebug()
+    {
+        if (!drawAimRays || !HasAimPoint) return;
+
+        Debug.DrawLine(transform.position + Vector3.up * 1.5f, AimPoint, Color.yellow);
+        Debug.DrawLine(GetMuzzlePosition(), AimPoint, Color.cyan);
+    }
+
+    /// <summary>
+    /// 从枪口指向瞄准点的单位方向（会聚射线）
+    /// 将来做射击时：Ray/shot 的 origin 用 GetMuzzlePosition()，direction 用这个。
+    /// 想改成平行射线，直接返回 transform.forward 即可。
+    /// </summary>
+    public Vector3 GetAimDirection()
+    {
+        Vector3 from = GetMuzzlePosition();
+        Vector3 to = HasAimPoint ? AimPoint : from + transform.forward * 20f;
+        Vector3 dir = to - from;
+        return dir.sqrMagnitude > 0.0001f ? dir.normalized : transform.forward;
+    }
+
+    #endregion
+
+    #region 核心方法 - 动画驱动
+
+    /// <summary>
+    /// 用"真实位移 / dt"算速度喂给动画控制器。
+    /// 不用 input 的意图值，是因为撞墙时输入还在按，但实际没动 —— 用真实位移才不会出现"贴墙跑步"。
+    /// </summary>
+    private void UpdateAnimation(PlayerInputReq input)
+    {
+        if (_anim == null) return;
+
+        Vector3 delta = transform.position - _lastPosition;
+        delta.y = 0f;                       // 只统计水平速度，跳跃/下落不污染混合树
+        float dt = Time.deltaTime;
+        float speed = dt > 0.0001f ? delta.magnitude / dt : 0f;
+        _lastPosition = transform.position;
+
+        _anim.SetMoveSpeed(speed);
+        _anim.SetGrounded(_controller.isGrounded);
+        _anim.SetFiring(input.Fire);
+        _anim.SetAiming(input.IsAiming);
     }
 
     #endregion

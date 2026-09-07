@@ -190,6 +190,17 @@ public class FrameSyncManager : BaseManager<FrameSyncManager>
             ? NetworkManager.Instance.GetLocalPlayerId()
             : "";
 
+        // ① 离散输入（开火 / 瞄准…）：位置里看不出来，必须单独分发，
+        //    否则远端玩家永远不会播开火动画
+        foreach (var kvp in frameState.PlayerInputs)
+        {
+            if (kvp.Key == localPlayerId) continue;
+
+            var remote = PlayerManager.GetInstance()?.GetRemotePlayer(kvp.Key);
+            remote?.OnServerInput(kvp.Value);
+        }
+
+        // ② 权威位置 + 朝向
         foreach (var kvp in frameState.PlayerStates)
         {
             // 本地玩家：位置由本地物理权威，忽略服务器回传的自己

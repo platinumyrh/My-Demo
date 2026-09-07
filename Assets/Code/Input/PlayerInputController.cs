@@ -19,6 +19,23 @@ public class PlayerInputController : MonoBehaviour
 
     #endregion
 
+    #region 公开属性
+
+    /// <summary>
+    /// 鼠标 / 指针的屏幕坐标（像素）
+    /// 俯视角射击的瞄准要用"绝对位置"做屏幕射线，而 InputActions 里的 Look 绑的是
+    /// &lt;Mouse&gt;/delta（相对位移），所以这里直接读设备，不走 Look 动作。
+    /// </summary>
+    public Vector2 LookScreenPosition { get; private set; }
+
+    /// <summary>是否按住开火（LocalPlayerCombat 用）</summary>
+    public bool FireHeld => _fire;
+
+    /// <summary>是否按住瞄准</summary>
+    public bool AimHeld => _isAiming;
+
+    #endregion
+
     #region Unity 生命周期
 
     private void Awake()
@@ -38,6 +55,19 @@ public class PlayerInputController : MonoBehaviour
         _inputActions.Gameplay.Jump.performed += ctx => _jump = true;
         _inputActions.Gameplay.Jump.canceled += ctx => _jump = false;
         _inputActions.Gameplay.Jump.canceled += ctx => _jump = false;
+    }
+
+    private void Update()
+    {
+        // 鼠标优先，其次任意指针设备（触摸/笔）
+        if (Mouse.current != null)
+        {
+            LookScreenPosition = Mouse.current.position.ReadValue();
+        }
+        else if (Pointer.current != null)
+        {
+            LookScreenPosition = Pointer.current.position.ReadValue();
+        }
     }
 
     private void OnEnable()

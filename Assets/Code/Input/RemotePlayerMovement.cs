@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using GameNetwork;
 using System.Collections.Generic;
 
@@ -14,10 +14,19 @@ public class RemotePlayerMovement : MonoBehaviour
     #region 配置参数
 
     [Header("插值设置")]
-    public float interpolationDelay = 0.1f; // 延迟插值，补偿网络抖动
+    public float interpolationDelay = 0.033f; // 延迟插值，补偿网络抖动
     public float correctionRate = 10f;      // 校正速率（每秒衰减的比例）
     public float snapDistance = 3f;         // 偏差超过该距离直接吸附
-    public float rotationSpeed = 15f;       // 旋转平滑速度
+    public float rotationSpeed = 22f;       // 旋转平滑速度
+
+    [Header("动画")]
+    [Tooltip("远端速度平滑时间（秒）。网络抖动会让前馈速度忽大忽小，平滑后脚步动画才不会抽搐")]
+    public float speedSmoothTime = 0.15f;
+
+    [Tooltip("远端输入（开火/瞄准）保活时长（秒）。\n" +
+             "服务端每帧清一次输入缓冲，某帧没收到该玩家输入时沿用上次的值，\n" +
+             "否则开火动画会疯狂闪烁；超过该时长没更新才判定为真的松手。")]
+    public float inputHoldTime = 0.15f;
 
     [Header("调试")]
     public string playerId = "Unknown";     // 玩家ID（用于标识）
@@ -47,6 +56,17 @@ public class RemotePlayerMovement : MonoBehaviour
     // 自己的 CharacterController：碰撞与落地由它解决
     private CharacterController _cc;
 
+    // 动画
+    private PlayerAnimationController _anim;
+    private float _smoothSpeed;
+    private float _speedVelocity;
+
+    // 远端离散输入（开火/瞄准），带保活
+    private bool _remoteFiring;
+    private bool _remoteAiming;
+    private bool _hasInput;
+    private float _lastInputTime;
+
     #endregion
 
     #region Unity 生命周期
@@ -55,6 +75,7 @@ public class RemotePlayerMovement : MonoBehaviour
     {
         _positionBuffer = new Queue<PositionSnapshot>(20); // 缓冲最近20帧
         _cc = GetComponent<CharacterController>();
+        _anim = PlayerAnimationController.Resolve(transform);
     }
 
     private void Update()
@@ -89,6 +110,35 @@ public class RemotePlayerMovement : MonoBehaviour
             _currentTarget.Rotation,
             rotationSpeed * Time.deltaTime
         );
+
+        UpdateAnimation();
+    }
+
+    /// <summary>
+    /// 用前馈速度（_targetVelocity）驱动混合树。
+    /// 这里不用"实际位移 / dt"，是因为远端是靠校正项一点点逼近权威位置的，
+    /// 实际位移里混了纠错量，会比真实速度快一截；_targetVelocity 才是对方的真实移动速度。
+    /// </summary>
+    private void UpdateAnimation()
+    {
+        if (_anim == null) return;
+
+        // 只取水平分量：上下方向的跳跃速度不该进移动混合树
+        Vector3 flatVel = new Vector3(_targetVelocity.x, 0f, _targetVelocity.z);
+
+        _smoothSpeed = Mathf.SmoothDamp(
+            _smoothSpeed,
+            flatVel.magnitude,
+            ref _speedVelocity,
+            Mathf.Max(0.0001f, speedSmoothTime)
+        );
+
+        _anim.SetMoveSpeed(_smoothSpeed);
+
+        // 保活：服务端不是每帧都带该玩家的输入，没更新的帧沿用旧值
+        bool alive = _hasInput && (Time.time - _lastInputTime <= inputHoldTime);
+        _anim.SetFiring(alive && _remoteFiring);
+        _anim.SetAiming(alive && _remoteAiming);
     }
 
     /// <summary>
@@ -137,6 +187,23 @@ public class RemotePlayerMovement : MonoBehaviour
         }
 
         UpdateTarget();
+    }
+
+    /// <summary>
+    /// 接收服务器转发的"该玩家的离散输入"（开火 / 瞄准 / 冲刺…）
+    /// 由 FrameSyncManager.OnServerFrame 调用。
+    ///
+    /// 注意：位置和朝向仍然只由 OnServerState 决定，这里只取"位置里看不出来的东西"。
+    /// 否则会出现用别人的输入去推别人的位置这种双重模拟。
+    /// </summary>
+    public void OnServerInput(GameNetwork.PlayerInput input)
+    {
+        if (input == null) return;
+
+        _remoteFiring = input.Fire;
+        _remoteAiming = input.IsAiming;
+        _lastInputTime = Time.time;
+        _hasInput = true;
     }
 
     /// <summary>
@@ -214,6 +281,9 @@ public class RemotePlayerMovement : MonoBehaviour
         _hasLastTargetPosition = false;
         _positionBuffer?.Clear();
         _currentTarget = null;
+        _smoothSpeed = 0f;
+        _speedVelocity = 0f;
+        _anim?.SetMoveSpeed(0f);
         transform.position = position;
     }
 
