@@ -100,6 +100,7 @@ public class WeaponController : MonoBehaviour
         public Vector3 EndPoint;      // 终点（命中点或射程尽头）
         public Collider HitCollider;  // 命中的碰撞体（未命中为 null）
         public string HitPlayerId;    // 命中的玩家ID（非玩家为 null）
+        public Vector3 HitNormal;     // 命中表面法线（未命中为 -Direction）
     }
 
     #endregion
@@ -170,13 +171,22 @@ public class WeaponController : MonoBehaviour
     #region 远端接口（纯表现，无判定）
 
     /// <summary>
-    /// 远端玩家开火表现：跳过弹匣/射速判定，直接按给定弹道播放
+    /// 远端玩家开火表现：跳过弹匣/射速判定，直接按给定弹道播放。
+    /// 命中法线由射手随事件传过来（射手本地 raycast 的真实表面法线），
+    /// 远端不做任何射线重放——打人打墙都直接用法线摆弹孔
     /// </summary>
-    public void PlayFireVisual(Vector3 origin, Vector3 direction, Vector3 endPoint, bool hitSomething)
+    public void PlayFireVisual(Vector3 origin, Vector3 direction, Vector3 endPoint, bool hitSomething, Vector3 impactNormal)
     {
         SpawnMuzzleFlash(origin);
         SpawnTracer(origin, direction, Vector3.Distance(origin, endPoint));
-        if (hitSomething) SpawnImpact(endPoint, -direction);
+
+        if (hitSomething)
+        {
+            Vector3 normal = impactNormal;
+            if (normal.sqrMagnitude < 0.001f) normal = -direction;
+            normal.Normalize();
+            SpawnImpact(endPoint, normal);
+        }
     }
 
     /// <summary>远端换弹表现（重置弹匣显示）</summary>
@@ -206,7 +216,8 @@ public class WeaponController : MonoBehaviour
                 Direction = aimRay.direction,
                 EndPoint = hit.point,
                 HitCollider = hit.collider,
-                HitPlayerId = GetPlayerId(hit.collider)
+                HitPlayerId = GetPlayerId(hit.collider),
+                HitNormal = hit.normal
             };
 
             SpawnMuzzleFlash(origin);
@@ -225,7 +236,8 @@ public class WeaponController : MonoBehaviour
                 Direction = aimRay.direction,
                 EndPoint = aimRay.origin + aimRay.direction * maxRange,
                 HitCollider = null,
-                HitPlayerId = null
+                HitPlayerId = null,
+                HitNormal = -aimRay.direction
             };
 
             SpawnMuzzleFlash(origin);

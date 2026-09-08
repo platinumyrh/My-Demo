@@ -34,6 +34,15 @@ public class PlayerInputController : MonoBehaviour
     /// <summary>是否按住瞄准</summary>
     public bool AimHeld => _isAiming;
 
+    /// <summary>
+    /// 战斗持续状态（LocalPlayerCombat 每帧写入，随输入上报）：
+    /// 反映武器的真实状态而非原始按键——按住扳机但换弹中/打空时不算开火
+    /// </summary>
+    public bool CombatFiring { get; set; }
+
+    /// <summary>换弹中</summary>
+    public bool CombatReloading { get; set; }
+
     #endregion
 
     #region Unity 生命周期
@@ -110,7 +119,8 @@ public class PlayerInputController : MonoBehaviour
             MoveY = _moveInput.y,      // 垂直方向 (W/S 或 上下摇杆)
             IsSprinting = _isSprinting,
             IsAiming = _isAiming,
-            Fire = _fire,
+            Fire = CombatFiring,       // 武器真实开火状态（随 PlayerState 广播给远端）
+            Reload = CombatReloading,  // 换弹状态（同上）
             Jump = _jump,
             Rotation = _rotation       // 鼠标视角或右摇杆
         };

@@ -77,6 +77,11 @@ public class LocalPlayerCombat : MonoBehaviour
             }
         }
 
+        // 持续状态上报（随 30Hz 输入包走，服务端并入 PlayerState 广播）：
+        // 按住扳机但换弹中/打空时不视为开火
+        _input.CombatFiring = _input.FireHeld && !weapon.IsReloading && weapon.CurrentAmmo > 0;
+        _input.CombatReloading = weapon.IsReloading;
+
         // 开火姿态给动画（Test.controller 暂无 IsFiring 参数，门面会静默跳过）
         _anim?.SetFiring(_input.FireHeld);
 
@@ -94,7 +99,33 @@ public class LocalPlayerCombat : MonoBehaviour
             CrosshairUI.Instance?.ShowHit();
         }
 
-        // TODO（网络阶段）：把 shot 上报 C2S_FireEvent，由服务端广播给其他玩家
+        // 上报开火事件：服务端转发给房间其他玩家重播弹道特效
+        //（本地已即时播放，服务端不会回发给射手自己）
+        try
+        {
+            var req = new GameNetwork.FireEventReq
+            {
+                OriginX = shot.Origin.x,
+                OriginY = shot.Origin.y,
+                OriginZ = shot.Origin.z,
+                DirX = shot.Direction.x,
+                DirY = shot.Direction.y,
+                DirZ = shot.Direction.z,
+                EndX = shot.EndPoint.x,
+                EndY = shot.EndPoint.y,
+                EndZ = shot.EndPoint.z,
+                HitSomething = shot.HitCollider != null,
+                HitPlayerId = shot.HitPlayerId ?? "",
+                HitNormalX = shot.HitNormal.x,
+                HitNormalY = shot.HitNormal.y,
+                HitNormalZ = shot.HitNormal.z
+            };
+            NetworkManager.Instance.Send(GameNetwork.MsgID.C2SFireEvent, req);
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[LocalPlayerCombat] ❌ 上报开火事件失败: {ex.Message}");
+        }
     }
 
     private void HandleReloadStart()

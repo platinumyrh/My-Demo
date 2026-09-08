@@ -116,11 +116,14 @@ public class NetworkHandler : MonoBehaviour
         // === 帧同步（高频路径，直调 FrameSyncManager）===
         Register(MsgID.S2CFrameState, FrameStateResp.Parser, OnFrameState);
 
+        // === 战斗事件 ===
+        Register(MsgID.S2CFireEvent, FireEventNotify.Parser, OnFireEvent);
+
         // === 游戏控制 ===
         Register(MsgID.S2CGameStart, GameStartNotify.Parser, OnGameStart);
         Register(MsgID.S2CGameOver, GameOverNotify.Parser, OnGameOver);
 
-        Debug.Log("[NetworkHandler] ✅ 已注册 10 个消息处理器");
+        Debug.Log("[NetworkHandler] ✅ 已注册 11 个消息处理器");
     }
 
     #endregion
@@ -321,6 +324,26 @@ public class NetworkHandler : MonoBehaviour
     private void OnFrameState(FrameStateResp frameState)
     {
         FrameSyncManager.GetInstance()?.OnServerFrame(frameState);
+    }
+
+    #endregion
+
+    #region Handler 实现 - 战斗事件
+
+    private void OnFireEvent(FireEventNotify notify)
+    {
+        EventBus.Publish(
+            GameEventType.OnRemoteFired,
+            RemoteFiredEventData.Create(
+                notify.PlayerId,
+                new UnityEngine.Vector3(notify.OriginX, notify.OriginY, notify.OriginZ),
+                new UnityEngine.Vector3(notify.DirX, notify.DirY, notify.DirZ),
+                new UnityEngine.Vector3(notify.EndX, notify.EndY, notify.EndZ),
+                notify.HitSomething,
+                notify.HitPlayerId,
+                new UnityEngine.Vector3(notify.HitNormalX, notify.HitNormalY, notify.HitNormalZ)
+            )
+        );
     }
 
     #endregion

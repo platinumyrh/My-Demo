@@ -83,6 +83,12 @@ public class PlayerManager : BaseManager<PlayerManager>
             OnRemotePlayerLeft
         );
 
+        // 远端玩家开火 → 分发给对应的远程玩家播弹道特效
+        eventBus.Subscribe<RemoteFiredEventData>(
+            GameEventType.OnRemoteFired,
+            OnRemoteFired
+        );
+
         // 注意：帧同步数据不走 EventBus，
         // 由 FrameSyncManager.OnServerFrame 直接调用 GetRemotePlayer 分发给远程玩家
 
@@ -106,6 +112,11 @@ public class PlayerManager : BaseManager<PlayerManager>
         eventBus.Unsubscribe<PlayerLeftRoomEventData>(
             GameEventType.OnPlayerLeftRoom,
             OnRemotePlayerLeft
+        );
+
+        eventBus.Unsubscribe<RemoteFiredEventData>(
+            GameEventType.OnRemoteFired,
+            OnRemoteFired
         );
 
         _subscribedToEventBus = false;
@@ -133,6 +144,14 @@ public class PlayerManager : BaseManager<PlayerManager>
         Debug.Log($"[PlayerManager] 👋 远程玩家离开: {eventData.PlayerId}");
 
         RemoveRemotePlayer(eventData.PlayerId);
+    }
+
+    /// <summary>
+    /// 远端玩家开火 → 交给对应的远程玩家播弹道特效
+    /// </summary>
+    private void OnRemoteFired(RemoteFiredEventData eventData)
+    {
+        GetRemotePlayer(eventData.PlayerId)?.OnFireEvent(eventData);
     }
 
     #endregion

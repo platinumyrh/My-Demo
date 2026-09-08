@@ -163,6 +163,11 @@ public class RemotePlayerMovement : MonoBehaviour
         var position = new Vector3(state.PosX, state.PosY, state.PosZ);
         var rotation = Quaternion.Euler(0f, state.RotY, 0f);
 
+        // 持续状态（与 OnServerInput 的 input.Fire 同源，双保险）
+        _remoteFiring = state.IsFiring;
+        _lastInputTime = Time.time;
+        _hasInput = true;
+
         // 诊断：第一次收到该玩家的状态时打一行，确认分发链路到达
         if (_positionBuffer.Count == 0)
         {
@@ -205,6 +210,31 @@ public class RemotePlayerMovement : MonoBehaviour
         _lastInputTime = Time.time;
         _hasInput = true;
     }
+
+    /// <summary>
+    /// 远端玩家开火事件（S2C_FireEvent 经 EventBus 分发到这里）
+    /// 把弹道交给该玩家身上的武器控制器播特效（枪口火光/拖尾/命中火花）
+    /// </summary>
+    public void OnFireEvent(RemoteFiredEventData eventData)
+    {
+        // 探针：确认事件到达远端并找到了远程玩家
+        Debug.Log($"[RemotePlayerMovement] 🔫 [{playerId}] 收到远端开火事件 hit={eventData.HitSomething}");
+
+        if (_weapon == null)
+        {
+            _weapon = GetComponentInChildren<WeaponController>();
+            if (_weapon == null)
+            {
+                Debug.LogWarning($"[RemotePlayerMovement] ⚠️ [{playerId}] 身上没有 WeaponController，弹道表现跳过");
+                return;
+            }
+        }
+
+        _weapon.PlayFireVisual(eventData.Origin, eventData.Direction, eventData.EndPoint,
+                               eventData.HitSomething, eventData.HitNormal);
+    }
+
+    private WeaponController _weapon; // 惰性缓存
 
     /// <summary>
     /// （已废弃）旧输入积分接口，仅为兼容保留

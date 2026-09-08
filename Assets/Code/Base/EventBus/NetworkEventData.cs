@@ -293,6 +293,38 @@ public class PlayerLeftRoomEventData : GameEventData
 #region 游戏控制事件数据
 
 /// <summary>
+/// 远端玩家开火事件数据（NetworkHandler 解析 S2C_FireEvent 后发布）
+/// </summary>
+public class RemoteFiredEventData : GameEventData
+{
+    public string PlayerId { get; set; } = "";
+    public Vector3 Origin { get; set; }
+    public Vector3 Direction { get; set; }
+    public Vector3 EndPoint { get; set; }
+    public bool HitSomething { get; set; }
+    public string HitPlayerId { get; set; } = "";
+    public Vector3 HitNormal { get; set; }
+
+    public static RemoteFiredEventData Create(string playerId, Vector3 origin, Vector3 direction, Vector3 endPoint, bool hitSomething, string hitPlayerId, Vector3 hitNormal)
+    {
+        return new RemoteFiredEventData
+        {
+            PlayerId = playerId,
+            Origin = origin,
+            Direction = direction,
+            EndPoint = endPoint,
+            HitSomething = hitSomething,
+            HitPlayerId = hitPlayerId,
+            HitNormal = hitNormal
+        };
+    }
+}
+
+#endregion
+
+#region 游戏控制事件数据
+
+/// <summary>
 /// 游戏开始事件数据
 /// </summary>
 public class GameStartedEventData : GameEventData

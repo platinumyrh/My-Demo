@@ -147,6 +147,15 @@ public enum GameEventType
 
     #endregion
 
+    #region 🔑 战斗事件（新增）
+
+    /// <summary>
+    /// 远端玩家开火（收到 S2C_FireEvent 广播，低频走 EventBus）
+    /// </summary>
+    OnRemoteFired,
+
+    #endregion
+
     #region 🔑 游戏控制事件（新增）
 
     /// <summary>
