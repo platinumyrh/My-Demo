@@ -1,0 +1,386 @@
+fileFormatVersion: 2
+guid: b4edd130086fb93439acce6289707a2e
+timeCreated: 1456006799
+licenseType: Store
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: Body
+    100002: Head
+    100004: ShieldLeft
+    100006: ShieldRight
+    100008: //RootNode
+    100010: Droid
+    100012: WeaponAttachment
+    400000: Body
+    400002: Head
+    400004: ShieldLeft
+    400006: ShieldRight
+    400008: //RootNode
+    400010: Droid
+    400012: WeaponAttachment
+    2300000: Body
+    2300002: Head
+    2300004: ShieldLeft
+    2300006: ShieldRight
+    2300008: WeaponAttachment
+    3300000: Body
+    3300002: Head
+    3300004: ShieldLeft
+    3300006: ShieldRight
+    3300008: WeaponAttachment
+    4300000: Body
+    4300002: ShieldLeft
+    4300004: ShieldRight
+    4300006: Head
+    4300008: WeaponAttachment
+    7400000: open
+    7400002: close
+    7400004: fire
+    7400006: hit
+    7400008: die
+    7400010: closed
+    7400012: idle
+    9500000: //RootNode
+  materials:
+    importMaterials: 0
+    materialName: 1
+    materialSearch: 2
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations:
+    - serializedVersion: 16
+      name: open
+      takeName: Take 001
+      firstFrame: 0
+      lastFrame: 24
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Droid
+        weight: 1
+      - path: Droid/Body
+        weight: 1
+      - path: Droid/Body/Head
+        weight: 1
+      - path: Droid/Body/ShieldLeft
+        weight: 1
+      - path: Droid/Body/ShieldRight
+        weight: 1
+      - path: WeaponAttachment
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+    - serializedVersion: 16
+      name: close
+      takeName: Take 001
+      firstFrame: 46
+      lastFrame: 70
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Droid
+        weight: 1
+      - path: Droid/Body
+        weight: 1
+      - path: Droid/Body/Head
+        weight: 1
+      - path: Droid/Body/ShieldLeft
+        weight: 1
+      - path: Droid/Body/ShieldRight
+        weight: 1
+      - path: WeaponAttachment
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+    - serializedVersion: 16
+      name: fire
+      takeName: Take 001
+      firstFrame: 25
+      lastFrame: 30
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Droid
+        weight: 1
+      - path: Droid/Body
+        weight: 1
+      - path: Droid/Body/Head
+        weight: 1
+      - path: Droid/Body/ShieldLeft
+        weight: 1
+      - path: Droid/Body/ShieldRight
+        weight: 1
+      - path: WeaponAttachment
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+    - serializedVersion: 16
+      name: hit
+      takeName: Take 001
+      firstFrame: 31
+      lastFrame: 45
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Droid
+        weight: 1
+      - path: Droid/Body
+        weight: 1
+      - path: Droid/Body/Head
+        weight: 1
+      - path: Droid/Body/ShieldLeft
+        weight: 1
+      - path: Droid/Body/ShieldRight
+        weight: 1
+      - path: WeaponAttachment
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+    - serializedVersion: 16
+      name: die
+      takeName: Take 001
+      firstFrame: 71
+      lastFrame: 90
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Droid
+        weight: 1
+      - path: Droid/Body
+        weight: 1
+      - path: Droid/Body/Head
+        weight: 1
+      - path: Droid/Body/ShieldLeft
+        weight: 1
+      - path: Droid/Body/ShieldRight
+        weight: 1
+      - path: WeaponAttachment
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+    - serializedVersion: 16
+      name: closed
+      takeName: Take 001
+      firstFrame: 0
+      lastFrame: 1
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      loopTime: 1
+      loopBlend: 1
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Droid
+        weight: 1
+      - path: Droid/Body
+        weight: 1
+      - path: Droid/Body/Head
+        weight: 1
+      - path: Droid/Body/ShieldLeft
+        weight: 1
+      - path: Droid/Body/ShieldRight
+        weight: 1
+      - path: WeaponAttachment
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+    - serializedVersion: 16
+      name: idle
+      takeName: Take 001
+      firstFrame: 24
+      lastFrame: 25
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      loopTime: 1
+      loopBlend: 1
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Droid
+        weight: 1
+      - path: Droid/Body
+        weight: 1
+      - path: Droid/Body/Head
+        weight: 1
+      - path: Droid/Body/ShieldLeft
+        weight: 1
+      - path: Droid/Body/ShieldRight
+        weight: 1
+      - path: WeaponAttachment
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

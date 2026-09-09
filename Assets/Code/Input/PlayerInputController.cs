@@ -43,6 +43,9 @@ public class PlayerInputController : MonoBehaviour
     /// <summary>换弹中</summary>
     public bool CombatReloading { get; set; }
 
+    /// <summary>换弹键本帧被按下（InputActions 的 Reload action，默认绑 R）</summary>
+    public bool ReloadPressed => _inputActions != null && _inputActions.Gameplay.Reload.WasPressedThisFrame();
+
     #endregion
 
     #region Unity 生命周期

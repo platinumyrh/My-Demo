@@ -1,0 +1,228 @@
+fileFormatVersion: 2
+guid: 222797277191ee940a362f37e51072eb
+timeCreated: 1458506425
+licenseType: Store
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: barrel
+    100002: Cylinder01
+    100004: Cylinder02
+    100006: //RootNode
+    100008: gatlingGun
+    100010: plasmaGun
+    100012: rocketLauncher
+    100014: Rocket
+    100016: bulletTrace
+    100018: muzzle_plasma
+    100020: muzzle_gatling
+    100022: RocketsFake
+    100024: Head
+    100026: Weapon
+    100028: WeaponAttachment
+    100030: Shell
+    100032: barrel01
+    100034: barrel02
+    100036: gatlingGun01
+    100038: lasers_wall
+    100040: plasmaGun_wall
+    100042: rocketLauncher_wall
+    100044: gatlingGun_wall
+    100046: barrel03
+    100048: Base
+    100050: Body
+    100052: Droid
+    100054: gatlingGun_floor
+    100056: plasmaGun_floor
+    100058: rocketLauncher_floor
+    100060: WeaponAttachment 1
+    100062: RocketsFake_wall
+    100064: lasers_floor
+    400000: barrel
+    400002: Cylinder01
+    400004: Cylinder02
+    400006: //RootNode
+    400008: gatlingGun
+    400010: plasmaGun
+    400012: rocketLauncher
+    400014: Rocket
+    400016: bulletTrace
+    400018: muzzle_plasma
+    400020: muzzle_gatling
+    400022: RocketsFake
+    400024: Head
+    400026: Weapon
+    400028: WeaponAttachment
+    400030: Shell
+    400032: barrel01
+    400034: barrel02
+    400036: gatlingGun01
+    400038: lasers_wall
+    400040: plasmaGun_wall
+    400042: rocketLauncher_wall
+    400044: gatlingGun_wall
+    400046: barrel03
+    400048: Base
+    400050: Body
+    400052: Droid
+    400054: gatlingGun_floor
+    400056: plasmaGun_floor
+    400058: rocketLauncher_floor
+    400060: WeaponAttachment 1
+    400062: RocketsFake_wall
+    400064: lasers_floor
+    2300000: barrel
+    2300002: Cylinder01
+    2300004: Cylinder02
+    2300006: gatlingGun
+    2300008: plasmaGun
+    2300010: rocketLauncher
+    2300012: Rocket
+    2300014: bulletTrace
+    2300016: muzzle_plasma
+    2300018: muzzle_gatling
+    2300020: RocketsFake
+    2300022: Head
+    2300024: Weapon
+    2300026: WeaponAttachment
+    2300028: Shell
+    2300030: barrel01
+    2300032: barrel02
+    2300034: gatlingGun01
+    2300036: lasers_wall
+    2300038: plasmaGun_wall
+    2300040: rocketLauncher_wall
+    2300042: gatlingGun_wall
+    2300044: barrel03
+    2300046: Base
+    2300048: Body
+    2300050: gatlingGun_floor
+    2300052: plasmaGun_floor
+    2300054: rocketLauncher_floor
+    2300056: WeaponAttachment 1
+    2300058: RocketsFake_wall
+    2300060: lasers_floor
+    3300000: barrel
+    3300002: Cylinder01
+    3300004: Cylinder02
+    3300006: gatlingGun
+    3300008: plasmaGun
+    3300010: rocketLauncher
+    3300012: Rocket
+    3300014: bulletTrace
+    3300016: muzzle_plasma
+    3300018: muzzle_gatling
+    3300020: RocketsFake
+    3300022: Head
+    3300024: Weapon
+    3300026: WeaponAttachment
+    3300028: Shell
+    3300030: barrel01
+    3300032: barrel02
+    3300034: gatlingGun01
+    3300036: lasers_wall
+    3300038: plasmaGun_wall
+    3300040: rocketLauncher_wall
+    3300042: gatlingGun_wall
+    3300044: barrel03
+    3300046: Base
+    3300048: Body
+    3300050: gatlingGun_floor
+    3300052: plasmaGun_floor
+    3300054: rocketLauncher_floor
+    3300056: WeaponAttachment 1
+    3300058: RocketsFake_wall
+    3300060: lasers_floor
+    4300000: rocketLauncher
+    4300002: Cylinder01
+    4300004: Cylinder02
+    4300006: plasmaGun
+    4300008: gatlingGun
+    4300010: barrel
+    4300012: Rocket
+    4300014: bulletTrace
+    4300016: muzzle_plasma
+    4300018: muzzle_gatling
+    4300020: RocketsFake
+    4300022: Head
+    4300024: Weapon
+    4300026: WeaponAttachment
+    4300028: Shell
+    4300030: lasers_wall
+    4300032: rocketLauncher_wall
+    4300034: plasmaGun_wall
+    4300036: gatlingGun01
+    4300038: barrel01
+    4300040: barrel02
+    4300042: gatlingGun_wall
+    4300044: Base
+    4300046: Body
+    4300048: WeaponAttachment
+    4300050: rocketLauncher_floor
+    4300052: plasmaGun_floor
+    4300054: gatlingGun_floor
+    4300056: barrel03
+    4300058: RocketsFake_wall
+    4300060: lasers_floor
+  materials:
+    importMaterials: 0
+    materialName: 1
+    materialSearch: 2
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

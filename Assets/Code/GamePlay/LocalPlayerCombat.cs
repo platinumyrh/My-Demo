@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.InputSystem;
 
 /// <summary>
 /// 本地玩家战斗编排（挂 Player 根节点，与 LocalPlayerMovement 平级）
@@ -14,10 +13,6 @@ public class LocalPlayerCombat : MonoBehaviour
     [Header("武器（留空自动在子物体里找）")]
     [Tooltip("武器控制器（枪模型物体上的那个）")]
     public WeaponController weapon;
-
-    [Header("键位（临时直读键盘，后续迁到 InputActions）")]
-    [Tooltip("换弹键")]
-    public Key reloadKey = Key.R;
 
     private PlayerInputController _input;
     private LocalPlayerMovement _movement;
@@ -66,15 +61,10 @@ public class LocalPlayerCombat : MonoBehaviour
             // 命中/未命中的细分反馈在 OnFired 事件里处理
         }
 
-        // 换弹
-        var keyboard = Keyboard.current;
-        if (keyboard != null)
+        // 换弹（InputActions 的 Reload action，默认 R）
+        if (_input.ReloadPressed)
         {
-            var key = keyboard.FindKeyOnCurrentKeyboardLayout(reloadKey.ToString());
-            if (key != null && key.wasPressedThisFrame)
-            {
-                weapon.TryReload();
-            }
+            weapon.TryReload();
         }
 
         // 持续状态上报（随 30Hz 输入包走，服务端并入 PlayerState 广播）：
@@ -93,6 +83,9 @@ public class LocalPlayerCombat : MonoBehaviour
 
     private void HandleFired(WeaponController.ShotInfo shot)
     {
+        // 开火动画（新模型的 fire 触发器）
+        _anim?.PlayFire();
+
         // 命中反馈（击杀反馈等伤害系统接入后在 shot.HitPlayerId 基础上扩展）
         if (shot.HitCollider != null)
         {

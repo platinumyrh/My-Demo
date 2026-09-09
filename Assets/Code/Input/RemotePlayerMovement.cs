@@ -133,7 +133,17 @@ public class RemotePlayerMovement : MonoBehaviour
             Mathf.Max(0.0001f, speedSmoothTime)
         );
 
-        _anim.SetMoveSpeed(_smoothSpeed);
+        // 原始输入轴等效值：远端没有输入，用移动方向归一化（走路/冲刺同一套值，与本地一致）
+        Vector3 localVel = transform.InverseTransformDirection(flatVel);
+        float mag = localVel.magnitude;
+        if (mag > 0.1f)
+        {
+            _anim.SetMoveInput(localVel.x / mag, localVel.z / mag);
+        }
+        else
+        {
+            _anim.SetMoveInput(0f, 0f);
+        }
 
         // 保活：服务端不是每帧都带该玩家的输入，没更新的帧沿用旧值
         bool alive = _hasInput && (Time.time - _lastInputTime <= inputHoldTime);
@@ -232,6 +242,9 @@ public class RemotePlayerMovement : MonoBehaviour
 
         _weapon.PlayFireVisual(eventData.Origin, eventData.Direction, eventData.EndPoint,
                                eventData.HitSomething, eventData.HitNormal);
+
+        // 远端开火动画（fire 触发器）
+        _anim?.PlayFire();
     }
 
     private WeaponController _weapon; // 惰性缓存

@@ -1,10 +1,10 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 子弹/拖尾特效的控制脚本（纯表现，无任何战斗逻辑）
-/// 特效 prefab 上不需要预先挂任何东西——Spawn 时自动补挂本组件
-/// 行为：从起点沿方向匀速飞到终点，到达后回收入池
+/// 子弹/拖尾特效（纯表现，无战斗逻辑）
+/// 对象管理走项目自带的 PoolManager（GameObjectPool，直接引用预制体的重载）：
+/// 同一特效预制体共用一个池，取出后驱动飞行，到达终点归还入池
+/// 特效 prefab 上不需要预先挂任何东西——首次取出时自动补挂本组件并测算视觉偏移
 /// </summary>
 public class ProjectileVFX : MonoBehaviour
 {
@@ -20,69 +20,68 @@ public class ProjectileVFX : MonoBehaviour
     private Vector3 _direction;
     private float _remainingDistance;
     private float _elapsed;
-    private ProjectileVFX _template; // 本实例的克隆源头（池的键）
+
+    // 本实例所属的池 key（归还时用）
+    private string _poolKey;
 
     // 弹道上的"真实位置"（根节点会被视觉偏移反向补偿，所以位置分两个字段存）
     private Vector3 _pathPosition;
 
-    // 视觉中心相对根节点的本地偏移（模板创建时测算，用于把视觉体对准弹道线）
+    // 视觉偏移是否已在本实例上测算过（实例被池复用，测算一次即可）
+    private bool _offsetMeasured;
+
+    // 视觉中心相对根节点的本地偏移（把视觉体对准弹道线用）
     private Vector3 _visualLocalOffset;
 
-    // prefab → 模板实例（隐藏的、带本组件的克隆）
-    private static readonly Dictionary<GameObject, ProjectileVFX> _templates = new();
-    // 模板实例 → 空闲对象池
-    private static readonly Dictionary<ProjectileVFX, Stack<ProjectileVFX>> _pools = new();
-
     /// <summary>
-    /// 从池中取出一个特效并发射
+    /// 发射一发拖尾特效（自动经 PoolManager 池化）
     /// </summary>
     /// <param name="prefab">特效预制体（拖 EffectCore 的 Projectile prefab）</param>
     /// <param name="origin">起点（一般是枪口）</param>
     /// <param name="direction">飞行方向（单位向量）</param>
     /// <param name="distance">飞行距离（到命中点或最大射程）</param>
-    public static ProjectileVFX Spawn(GameObject prefab, Vector3 origin, Vector3 direction, float distance)
+    public static void Spawn(GameObject prefab, Vector3 origin, Vector3 direction, float distance)
     {
-        if (prefab == null) return null;
+        if (prefab == null) return;
 
-        if (!_templates.TryGetValue(prefab, out var template))
+        var poolManager = PoolManager.GetInstance();
+        poolManager.Initialize(); // 确保 PoolRoot 就绪
+
+        // 同一预制体共用一个池（key 用实例ID保证唯一）
+        string poolKey = $"TracerVFX_{prefab.GetInstanceID()}";
+
+        if (!poolManager.HasGameObjectPool(poolKey))
         {
-            var go = Object.Instantiate(prefab);
-            go.SetActive(false);
-            template = go.GetComponent<ProjectileVFX>();
-            if (template == null) template = go.AddComponent<ProjectileVFX>();
-            template.PrepareTemplate();
-            _templates[prefab] = template;
-            _pools[template] = new Stack<ProjectileVFX>();
+            poolManager.CreateGameObjectPool(poolKey, prefab, maxSize: 20);
         }
 
-        var pool = _pools[template];
-        var vfx = pool.Count > 0 ? pool.Pop() : Object.Instantiate(template);
-        vfx._template = template;
-        vfx._visualLocalOffset = template._visualLocalOffset;
-        vfx.gameObject.SetActive(true);
+        GameObject go = poolManager.GetGameObject(poolKey);
+        if (go == null) return;
+
+        var vfx = go.GetComponent<ProjectileVFX>();
+        if (vfx == null) vfx = go.AddComponent<ProjectileVFX>();
+
+        vfx._poolKey = poolKey;
+        if (!vfx._offsetMeasured)
+        {
+            vfx.MeasureVisualOffset();
+        }
         vfx.Launch(origin, direction.normalized, distance);
-        return vfx;
     }
 
     /// <summary>
-    /// 模板初始化：
-    /// 1. 停用特效包自带的行为脚本（运动/朝向由本脚本驱动，避免打架）
-    /// 2. 测算视觉中心相对根节点的偏移（这类 prefab 的视觉体常偏离轴心几米，
-    ///    不补偿的话拖尾会整体偏离弹道线）
+    /// 测算视觉中心相对根节点的本地偏移（只统计 MeshRenderer，
+    /// ParticleSystemRenderer 的 bounds 含粒子扩散范围，不可靠）
     /// </summary>
-    private void PrepareTemplate()
+    private void MeasureVisualOffset()
     {
-        foreach (var mb in GetComponentsInChildren<MonoBehaviour>(true))
-        {
-            if (mb is ProjectileVFX) continue;
-            if (mb != null) mb.enabled = false;
-        }
+        _offsetMeasured = true;
 
-        var renderers = GetComponentsInChildren<Renderer>(true);
-        if (renderers.Length > 0)
+        var meshes = GetComponentsInChildren<MeshRenderer>(true);
+        if (meshes.Length > 0)
         {
-            Bounds bounds = renderers[0].bounds;
-            for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+            Bounds bounds = meshes[0].bounds;
+            for (int i = 1; i < meshes.Length; i++) bounds.Encapsulate(meshes[i].bounds);
             _visualLocalOffset = transform.InverseTransformPoint(bounds.center);
         }
     }
@@ -111,8 +110,7 @@ public class ProjectileVFX : MonoBehaviour
         _pathPosition += _direction * step;
         _remainingDistance -= step;
 
-        // 每帧强制对齐飞行方向（特效包自带的脚本可能持续修改朝向），
-        // visualRotationOffset 用于纠正特效本身的轴向约定
+        // 每帧强制对齐飞行方向；visualRotationOffset 纠正特效本身的轴向约定
         transform.rotation = Quaternion.LookRotation(_direction) * Quaternion.Euler(visualRotationOffset);
 
         // 视觉中心贴住弹道线：根位置 = 弹道点 - 旋转后的视觉偏移
@@ -124,14 +122,13 @@ public class ProjectileVFX : MonoBehaviour
 
     private void Despawn()
     {
-        gameObject.SetActive(false);
-        if (_template != null && _pools.TryGetValue(_template, out var pool))
+        if (!string.IsNullOrEmpty(_poolKey))
         {
-            pool.Push(this);
+            PoolManager.GetInstance().ReleaseGameObject(_poolKey, gameObject);
         }
         else
         {
-            Destroy(gameObject); // 无池可回时兜底销毁
+            gameObject.SetActive(false); // 无池可归还时仅隐藏兜底
         }
     }
 }

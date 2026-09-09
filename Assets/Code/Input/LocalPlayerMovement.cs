@@ -12,8 +12,8 @@ public class LocalPlayerMovement : MonoBehaviour
     #region 配置参数
 
     [Header("移动参数")]
-    public float walkSpeed = 5f;
-    public float sprintSpeed = 8f;
+    public float walkSpeed = 2f;
+    public float sprintSpeed = 5f;
 
     [Header("瞄准")]
     [Tooltip("每秒最大转身角度（度）。俯视角射击要跟手，建议给很大：1080 = 1/3 秒转一圈")]
@@ -30,7 +30,7 @@ public class LocalPlayerMovement : MonoBehaviour
 
     [Header("网络同步")]
     [Tooltip("每秒发送多少次输入到服务器")]
-    public int sendRate = 30; // 与服务器帧率一致
+    public int sendRate = 60; // 与服务器帧率一致
 
     [Header("调试可视化")]
     [Tooltip("画出瞄准射线（Scene视图常显，Game视图需开Gizmos）")]
@@ -53,6 +53,11 @@ public class LocalPlayerMovement : MonoBehaviour
     // 瞄准相关
     private float _aimAngleDeg;      // 目标朝向（Y 轴欧拉角，度）
     private Vector3 _lastPosition;   // 上一帧位置（算真实速度用）
+
+    // 动画辅助：转向角速度、垂直速度、落地检测
+    private float _lastYaw;
+    private float _verticalSpeed;
+    private bool _wasGrounded = true;
 
     #endregion
 
@@ -77,6 +82,7 @@ public class LocalPlayerMovement : MonoBehaviour
         _predictedPosition = transform.position;
         _predictedRotation = transform.rotation;
         _lastPosition = transform.position;
+        _lastYaw = transform.eulerAngles.y;
 
         if (_anim == null)
         {
@@ -213,6 +219,7 @@ public class LocalPlayerMovement : MonoBehaviour
         if (_controller.isGrounded && input.Jump)
         {
             verticalVelocity = Vector3.up * 5f; // 跳跃力度
+            _anim?.PlayJump();                  // 新模型：jump 触发器
         }
 
         // 合并移动
@@ -220,6 +227,9 @@ public class LocalPlayerMovement : MonoBehaviour
 
         // 移动角色
         _controller.Move(finalMove);
+
+        // 记录垂直速度（falling 动画参数用）
+        if (Time.deltaTime > 0.0001f) _verticalSpeed = finalMove.y / Time.deltaTime;
 
         // 转向：始终面向鼠标（俯视角射击的核心手感）
         ApplyRotation();
@@ -340,21 +350,47 @@ public class LocalPlayerMovement : MonoBehaviour
     #region 核心方法 - 动画驱动
 
     /// <summary>
-    /// 用"真实位移 / dt"算速度喂给动画控制器。
-    /// 不用 input 的意图值，是因为撞墙时输入还在按，但实际没动 —— 用真实位移才不会出现"贴墙跑步"。
+    /// 喂原始输入轴（-1..1）给混合树：走路/冲刺同一套值，表现保持一致。
     /// </summary>
     private void UpdateAnimation(PlayerInputReq input)
     {
         if (_anim == null) return;
 
         Vector3 delta = transform.position - _lastPosition;
-        delta.y = 0f;                       // 只统计水平速度，跳跃/下落不污染混合树
+        _lastPosition = transform.position;
+        delta.y = 0f;                       // 只统计水平速度
         float dt = Time.deltaTime;
         float speed = dt > 0.0001f ? delta.magnitude / dt : 0f;
-        _lastPosition = transform.position;
 
-        _anim.SetMoveSpeed(speed);
-        _anim.SetGrounded(_controller.isGrounded);
+        // 原始输入是摄像机相对的，先转成世界方向再转进角色本地空间——
+        // 混合树的 horizontal/vertical 必须是角色本地坐标，否则只有面向+Z时方向才正确
+        Vector3 moveDir = new Vector3(input.MoveX, 0f, input.MoveY);
+        if (moveDir.sqrMagnitude > 0.01f && Camera.main != null)
+        {
+            moveDir = Camera.main.transform.TransformDirection(moveDir);
+            moveDir.y = 0f;
+            moveDir.Normalize();
+        }
+        Vector3 localDir = transform.InverseTransformDirection(moveDir);
+
+        // 原始输入轴（角色本地空间）直接进混合树参数（horizontal/vertical）
+        _anim.SetMoveInput(localDir.x, localDir.z);
+        _anim.SetMoveSpeed(speed);          // 旧控制器 Speed 参数仍用真实速度（新模型自动跳过）
+
+        // 转向参数：本帧朝向角速度归一化（±720°/s 映射到 ±1），驱动 turnLeft/turnRight
+        float yaw = transform.eulerAngles.y;
+        float yawRate = dt > 0.0001f ? Mathf.DeltaAngle(_lastYaw, yaw) / dt : 0f;
+        _lastYaw = yaw;
+
+
+        // 跳跃三态：落地触发器、下坠布尔
+        bool grounded = _controller.isGrounded;
+        if (grounded && !_wasGrounded) _anim.PlayLand();
+        if (!grounded) _anim.SetFalling(_verticalSpeed < -0.5f);
+        else _anim.SetFalling(false);
+        _wasGrounded = grounded;
+
+        _anim.SetGrounded(grounded);
         _anim.SetFiring(input.Fire);
         _anim.SetAiming(input.IsAiming);
     }

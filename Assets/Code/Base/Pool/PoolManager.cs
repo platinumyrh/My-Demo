@@ -26,7 +26,7 @@ public class PoolManager :BaseManager<PoolManager>
     public GameObjectPool CreateGameObjectPool(string poolKey, string prefabPath, int maxSize = 10)
     {
         if (gameObjectPools.ContainsKey(poolKey))
-        { 
+        {
           Debug.LogWarning($"GameObjectPool with key {poolKey} already exists.");
             return gameObjectPools[poolKey];
         }
@@ -38,6 +38,31 @@ public class PoolManager :BaseManager<PoolManager>
         gameObjectPools.Add(poolKey, newPool);
 
         return newPool;
+    }
+
+    /// <summary>
+    /// 直接引用预制体的池（预制体不在 Resources 目录时用，如 Inspector 拖拽的特效）
+    /// </summary>
+    public GameObjectPool CreateGameObjectPool(string poolKey, GameObject prefab, int maxSize = 10)
+    {
+        if (gameObjectPools.ContainsKey(poolKey))
+        {
+            Debug.LogWarning($"GameObjectPool with key {poolKey} already exists.");
+            return gameObjectPools[poolKey];
+        }
+
+        GameObject container = new GameObject($"{poolKey}_Container");
+        container.transform.SetParent(poolRoot);
+        GameObjectPool newPool = new GameObjectPool(prefab, container.transform, maxSize);
+        gameObjectPools.Add(poolKey, newPool);
+
+        return newPool;
+    }
+
+    /// <summary>游戏对象池是否存在</summary>
+    public bool HasGameObjectPool(string poolKey)
+    {
+        return gameObjectPools.ContainsKey(poolKey);
     }
     public GameObject GetGameObject(string poolKey)
     {

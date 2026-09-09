@@ -33,6 +33,29 @@ public class PlayerAnimationController : MonoBehaviour
     [SerializeField] private string hitTriggerParam = "Hit";
     [SerializeField] private string reloadTriggerParam = "Reload";
 
+    [Header("2D 混合树参数（droid_walker 等新模型，没有的自动跳过）")]
+    [SerializeField] private string horizontalParam = "horizontal";
+    [SerializeField] private string verticalParam = "vertical";
+    [SerializeField] private string turnParam = "turn";
+    [SerializeField] private string activeParam = "active";
+    [SerializeField] private string fallingParam = "falling";
+    [SerializeField] private string jumpTriggerParam = "jump";
+    [SerializeField] private string landTriggerParam = "land";
+    [SerializeField] private string fireTriggerParam = "fire";
+    [SerializeField] private string damageTriggerParam = "damage";
+    [SerializeField] private string damageDirXParam = "damageDirX";
+    [SerializeField] private string damageDirYParam = "damageDirY";
+
+    [Header("移动动画播放速度（需要 controller 里有 moveAnimSpeed 参数并绑到状态的 Speed Parameter）")]
+    [Tooltip("走路（速度接近0）时的动画播放倍率")]
+    [SerializeField] private float walkAnimSpeed = 1f;
+
+    [Tooltip("奔跑（速度拉满）时的动画播放倍率")]
+    [SerializeField] private float runAnimSpeed = 1f;
+
+    [Tooltip("驱动播放倍率的参数名")]
+    [SerializeField] private string moveSpeedParamName = "moveAnimSpeed";
+
     [Header("速度映射")]
     [Tooltip("把 m/s 除以 maxMoveSpeed 归一化到 0~1 再喂给混合树。\n混合树阈值是 0 / 0.5 / 1 时必须开启。")]
     [SerializeField] private bool normalizeSpeed = true;
@@ -68,6 +91,17 @@ public class PlayerAnimationController : MonoBehaviour
     // 参数 Hash + 是否存在的标记（Animator 里没有的参数直接跳过，避免每帧刷 Warning）
     private int _speedHash, _isMovingHash, _firingHash, _aimingHash, _groundedHash, _deadHash, _hitHash, _reloadHash;
     private bool _hasSpeed, _hasIsMoving, _hasFiring, _hasAiming, _hasGrounded, _hasDead, _hasHit, _hasReload;
+
+    // 新模型（2D 混合树）参数
+    private int _horizontalHash, _verticalHash, _turnHash, _activeHash, _fallingHash;
+    private int _jumpHash, _landHash, _fireHash, _damageHash, _damageDirXHash, _damageDirYHash;
+    private bool _hasHorizontal, _hasVertical, _hasTurn, _hasActive, _hasFalling;
+    private bool _hasJump, _hasLand, _hasFireTrigger, _hasDamageTrigger, _hasDamageDir;
+    private bool _firingIsBool;
+
+    // 播放速度旋钮（controller 的 moveAnimSpeed 参数）
+    private int _moveSpeedHash;
+    private bool _hasMoveSpeed;
 
     private float _currentSpeed;    // 当前喂给 Animator 的值（已归一化/已平滑）
     private float _speedVelocity;   // SmoothDamp 内部速度
@@ -117,12 +151,39 @@ public class PlayerAnimationController : MonoBehaviour
     {
         _speedHash     = ResolveParam(speedParam,      ref _hasSpeed,     "float (混合树)");
         _isMovingHash  = ResolveParam(isMovingParam,   ref _hasIsMoving,  "bool");
-        _firingHash    = ResolveParam(firingParam,     ref _hasFiring,    "bool");
+        _firingHash    = ResolveParam(firingParam,     ref _hasFiring,    "bool/trigger");
         _aimingHash    = ResolveParam(aimingParam,     ref _hasAiming,    "bool");
         _groundedHash  = ResolveParam(groundedParam,   ref _hasGrounded,  "bool");
         _deadHash      = ResolveParam(deadParam,       ref _hasDead,      "bool");
         _hitHash       = ResolveParam(hitTriggerParam, ref _hasHit,       "trigger");
         _reloadHash    = ResolveParam(reloadTriggerParam, ref _hasReload, "trigger");
+
+        // 旧 firingParam 若是 Trigger 类型，SetFiring 不再写它（避免误触发），开火走 PlayFire
+        _firingIsBool = _hasFiring && GetParamType(firingParam) == AnimatorControllerParameterType.Bool;
+
+        _horizontalHash = ResolveParam(horizontalParam, ref _hasHorizontal, "float (2D混合)");
+        _verticalHash   = ResolveParam(verticalParam,   ref _hasVertical,   "float (2D混合)");
+        _turnHash       = ResolveParam(turnParam,       ref _hasTurn,       "float");
+        _activeHash     = ResolveParam(activeParam,     ref _hasActive,     "bool");
+        _fallingHash    = ResolveParam(fallingParam,    ref _hasFalling,    "bool");
+        _jumpHash       = ResolveParam(jumpTriggerParam, ref _hasJump,      "trigger");
+        _landHash       = ResolveParam(landTriggerParam, ref _hasLand,      "trigger");
+        _fireHash       = ResolveParam(fireTriggerParam, ref _hasFireTrigger, "trigger");
+        _damageHash     = ResolveParam(damageTriggerParam, ref _hasDamageTrigger, "trigger");
+        _damageDirXHash = ResolveParam(damageDirXParam, ref _hasDamageDir,  "float (受击方向)");
+        _damageDirYHash = ResolveParam(damageDirYParam, ref _hasDamageDir,  "float (受击方向)");
+
+        _moveSpeedHash  = ResolveParam(moveSpeedParamName, ref _hasMoveSpeed, "float (播放速度旋钮)");
+    }
+
+    /// <summary>查询参数类型（不存在返回 Bool 的无效值由调用方先查存在性）</summary>
+    private AnimatorControllerParameterType GetParamType(string paramName)
+    {
+        foreach (var p in _anim.parameters)
+        {
+            if (p.name == paramName) return p.type;
+        }
+        return AnimatorControllerParameterType.Bool;
     }
 
     /// <summary>
@@ -133,10 +194,12 @@ public class PlayerAnimationController : MonoBehaviour
     {
         if (_hasSpeed) _anim.SetFloat(_speedHash, _currentSpeed);
         if (_hasIsMoving) _anim.SetBool(_isMovingHash, false);
-        if (_hasFiring) _anim.SetBool(_firingHash, false);
+        if (_hasFiring && _firingIsBool) _anim.SetBool(_firingHash, false);
         if (_hasAiming) _anim.SetBool(_aimingHash, false);
         if (_hasGrounded) _anim.SetBool(_groundedHash, _grounded);
         if (_hasDead) _anim.SetBool(_deadHash, false);
+        if (_hasActive) _anim.SetBool(_activeHash, true); // 新模型：进场即激活
+        if (_hasFalling) _anim.SetBool(_fallingHash, false);
     }
 
     private int ResolveParam(string paramName, ref bool present, string expectType)
@@ -201,13 +264,87 @@ public class PlayerAnimationController : MonoBehaviour
 
     #endregion
 
+    #region 公开方法 - 2D 混合树（droid_walker 等新模型）
+
+    /// <summary>
+    /// 设置角色本地空间速度（米/秒）：localX=侧向，localZ=前后。
+    /// 驱动 horizontal/vertical 二维混合树；同时换算标量速度喂旧 Speed 参数（旧模型兼容）
+    /// </summary>
+    public void SetMoveInput(float inputX, float inputZ)
+    {
+        if (_anim == null) return;
+        if (_dead) { inputX = 0f; inputZ = 0f; }
+
+        // 直接喂原始输入轴（-1..1），走路/冲刺同一套值——混合树表现完全一致
+        if (_hasHorizontal) _anim.SetFloat(_horizontalHash, Mathf.Clamp(inputX, -1f, 1f));
+        if (_hasVertical) _anim.SetFloat(_verticalHash, Mathf.Clamp(inputZ, -1f, 1f));
+
+        SetMoveSpeed(new Vector2(inputX, inputZ).magnitude);
+    }
+
+    /// <summary>转向参数（归一化 -1..1：负=左转，正=右转），驱动 turnLeft/turnRight 混合</summary>
+    public void SetTurn(float normalizedTurn)
+    {
+        if (_anim == null || _dead) return;
+        if (_hasTurn) _anim.SetFloat(_turnHash, Mathf.Clamp(normalizedTurn, -1f, 1f));
+    }
+
+    /// <summary>跳跃动画（Trigger）</summary>
+    public void PlayJump()
+    {
+        if (_anim == null || _dead) return;
+        if (_hasJump) _anim.SetTrigger(_jumpHash);
+    }
+
+    /// <summary>落地动画（Trigger）</summary>
+    public void PlayLand()
+    {
+        if (_anim == null || _dead) return;
+        if (_hasLand) _anim.SetTrigger(_landHash);
+    }
+
+    /// <summary>是否悬空下坠（falling bool）</summary>
+    public void SetFalling(bool falling)
+    {
+        if (_anim == null) return;
+        if (_hasFalling) _anim.SetBool(_fallingHash, falling);
+    }
+
+    /// <summary>开火动画（fire Trigger）——本地开火命中/远端收到开火事件时调用</summary>
+    public void PlayFire()
+    {
+        if (_anim == null || _dead) return;
+        if (_hasFireTrigger) _anim.SetTrigger(_fireHash);
+    }
+
+    /// <summary>
+    /// 受击动画：localDir 为受击方向在角色本地空间的朝向分量（决定受击姿态偏摆）
+    /// </summary>
+    public void PlayDamage(Vector2 localDir)
+    {
+        if (_anim == null || _dead) return;
+
+        if (_hasDamageDir)
+        {
+            _anim.SetFloat(_damageDirXHash, localDir.x);
+            _anim.SetFloat(_damageDirYHash, localDir.y);
+        }
+        if (_hasDamageTrigger) _anim.SetTrigger(_damageHash);
+    }
+
+    #endregion
+
     #region 公开方法 - 持续状态（bool）
 
-    /// <summary>是否处于开火状态（持续型：按住就一直播，松开就停）</summary>
+    /// <summary>是否处于开火状态（持续型）。
+    /// 新模型的 fire 是 Trigger（点射事件），此方法自动跳过，开火走 PlayFire</summary>
     public void SetFiring(bool firing)
     {
         if (_anim == null) return;
         if (_dead) firing = false;
+        if (_firingIsBool == false && _hasFiring == false) return;
+        if (_firingIsBool == false) return; // fire 参数是 Trigger，不在此处写
+
         if (firing == _firing) return;
 
         _firing = firing;
@@ -306,8 +443,19 @@ public class PlayerAnimationController : MonoBehaviour
             if (_hasAiming) _anim.SetBool(_aimingHash, false);
             if (_hasSpeed) _anim.SetFloat(_speedHash, 0f);
             if (_hasIsMoving) _anim.SetBool(_isMovingHash, false);
+            if (_hasHorizontal) _anim.SetFloat(_horizontalHash, 0f);
+            if (_hasVertical) _anim.SetFloat(_verticalHash, 0f);
+            if (_hasTurn) _anim.SetFloat(_turnHash, 0f);
+
+            // 新模型：active=false 走 Inactive 状态（旧模型走 IsDead/deathState）
+            if (_hasActive) _anim.SetBool(_activeHash, false);
 
             if (!string.IsNullOrEmpty(deathStateName)) CrossFade(deathStateName);
+        }
+        else
+        {
+            // 复活：重新激活
+            if (_hasActive) _anim.SetBool(_activeHash, true);
         }
         // 复活不在这里 CrossFade：IsDead 置回 false 后，让 Animator 状态机自己按条件过渡回去
     }

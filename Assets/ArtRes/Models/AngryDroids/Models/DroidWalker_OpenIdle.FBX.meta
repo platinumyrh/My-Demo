@@ -1,0 +1,2194 @@
+fileFormatVersion: 2
+guid: 0ac0e27dc63b0fa46bf41feaf20f825e
+ModelImporter:
+  serializedVersion: 22200
+  internalIDToNameTable:
+  - first:
+      1: 100000
+    second: Antenna
+  - first:
+      1: 100002
+    second: Back_IKChainLower
+  - first:
+      1: 100004
+    second: Back_IKChainUpper
+  - first:
+      1: 100006
+    second: Body
+  - first:
+      1: 100008
+    second: Core
+  - first:
+      1: 100010
+    second: Droid
+  - first:
+      1: 100012
+    second: DroidShield
+  - first:
+      1: 100014
+    second: //RootNode
+  - first:
+      1: 100016
+    second: Front_IKChainLower
+  - first:
+      1: 100018
+    second: Front_IKChainUpper
+  - first:
+      1: 100020
+    second: Head
+  - first:
+      1: 100022
+    second: HeadCtrl
+  - first:
+      1: 100024
+    second: Left_IKChainLower
+  - first:
+      1: 100026
+    second: Left_IKChainUpper
+  - first:
+      1: 100028
+    second: LegBack_Foot
+  - first:
+      1: 100030
+    second: LegBack_Lower
+  - first:
+      1: 100032
+    second: LegBack_Middle
+  - first:
+      1: 100034
+    second: LegBack_Toe
+  - first:
+      1: 100036
+    second: LegBack_Upper
+  - first:
+      1: 100038
+    second: LegBackCtrl
+  - first:
+      1: 100040
+    second: LegFront_Foot
+  - first:
+      1: 100042
+    second: LegFront_Lower
+  - first:
+      1: 100044
+    second: LegFront_Middle
+  - first:
+      1: 100046
+    second: LegFront_Toe
+  - first:
+      1: 100048
+    second: LegFront_Upper
+  - first:
+      1: 100050
+    second: LegFrontCtrl
+  - first:
+      1: 100052
+    second: LegLeft_Foot
+  - first:
+      1: 100054
+    second: LegLeft_Lower
+  - first:
+      1: 100056
+    second: LegLeft_Middle
+  - first:
+      1: 100058
+    second: LegLeft_Toe
+  - first:
+      1: 100060
+    second: LegLeft_Upper
+  - first:
+      1: 100062
+    second: LegLeftCtrl
+  - first:
+      1: 100064
+    second: LegRight_Foot
+  - first:
+      1: 100066
+    second: LegRight_Lower
+  - first:
+      1: 100068
+    second: LegRight_Middle
+  - first:
+      1: 100070
+    second: LegRight_Toe
+  - first:
+      1: 100072
+    second: LegRight_Upper
+  - first:
+      1: 100074
+    second: LegRightCtrl
+  - first:
+      1: 100076
+    second: LookAtCtrl
+  - first:
+      1: 100078
+    second: Object01
+  - first:
+      1: 100080
+    second: Plane01
+  - first:
+      1: 100082
+    second: Right_IKChainLower
+  - first:
+      1: 100084
+    second: Right_IKChainUpper
+  - first:
+      1: 100086
+    second: ShieldPlate_01
+  - first:
+      1: 100088
+    second: ShieldPlate_02
+  - first:
+      1: 100090
+    second: ShieldPlate_03
+  - first:
+      1: 100092
+    second: ShieldPlate_04
+  - first:
+      1: 100094
+    second: Weapon
+  - first:
+      1: 100096
+    second: WeaponAttachment
+  - first:
+      4: 400000
+    second: Antenna
+  - first:
+      4: 400002
+    second: Back_IKChainLower
+  - first:
+      4: 400004
+    second: Back_IKChainUpper
+  - first:
+      4: 400006
+    second: Body
+  - first:
+      4: 400008
+    second: Core
+  - first:
+      4: 400010
+    second: Droid
+  - first:
+      4: 400012
+    second: DroidShield
+  - first:
+      4: 400014
+    second: //RootNode
+  - first:
+      4: 400016
+    second: Front_IKChainLower
+  - first:
+      4: 400018
+    second: Front_IKChainUpper
+  - first:
+      4: 400020
+    second: Head
+  - first:
+      4: 400022
+    second: HeadCtrl
+  - first:
+      4: 400024
+    second: Left_IKChainLower
+  - first:
+      4: 400026
+    second: Left_IKChainUpper
+  - first:
+      4: 400028
+    second: LegBack_Foot
+  - first:
+      4: 400030
+    second: LegBack_Lower
+  - first:
+      4: 400032
+    second: LegBack_Middle
+  - first:
+      4: 400034
+    second: LegBack_Toe
+  - first:
+      4: 400036
+    second: LegBack_Upper
+  - first:
+      4: 400038
+    second: LegBackCtrl
+  - first:
+      4: 400040
+    second: LegFront_Foot
+  - first:
+      4: 400042
+    second: LegFront_Lower
+  - first:
+      4: 400044
+    second: LegFront_Middle
+  - first:
+      4: 400046
+    second: LegFront_Toe
+  - first:
+      4: 400048
+    second: LegFront_Upper
+  - first:
+      4: 400050
+    second: LegFrontCtrl
+  - first:
+      4: 400052
+    second: LegLeft_Foot
+  - first:
+      4: 400054
+    second: LegLeft_Lower
+  - first:
+      4: 400056
+    second: LegLeft_Middle
+  - first:
+      4: 400058
+    second: LegLeft_Toe
+  - first:
+      4: 400060
+    second: LegLeft_Upper
+  - first:
+      4: 400062
+    second: LegLeftCtrl
+  - first:
+      4: 400064
+    second: LegRight_Foot
+  - first:
+      4: 400066
+    second: LegRight_Lower
+  - first:
+      4: 400068
+    second: LegRight_Middle
+  - first:
+      4: 400070
+    second: LegRight_Toe
+  - first:
+      4: 400072
+    second: LegRight_Upper
+  - first:
+      4: 400074
+    second: LegRightCtrl
+  - first:
+      4: 400076
+    second: LookAtCtrl
+  - first:
+      4: 400078
+    second: Object01
+  - first:
+      4: 400080
+    second: Plane01
+  - first:
+      4: 400082
+    second: Right_IKChainLower
+  - first:
+      4: 400084
+    second: Right_IKChainUpper
+  - first:
+      4: 400086
+    second: ShieldPlate_01
+  - first:
+      4: 400088
+    second: ShieldPlate_02
+  - first:
+      4: 400090
+    second: ShieldPlate_03
+  - first:
+      4: 400092
+    second: ShieldPlate_04
+  - first:
+      4: 400094
+    second: Weapon
+  - first:
+      4: 400096
+    second: WeaponAttachment
+  - first:
+      23: 2300000
+    second: Antenna
+  - first:
+      23: 2300002
+    second: Body
+  - first:
+      23: 2300004
+    second: Core
+  - first:
+      23: 2300006
+    second: DroidShield
+  - first:
+      23: 2300008
+    second: Head
+  - first:
+      23: 2300010
+    second: HeadCtrl
+  - first:
+      23: 2300012
+    second: LegBack_Foot
+  - first:
+      23: 2300014
+    second: LegBack_Lower
+  - first:
+      23: 2300016
+    second: LegBack_Middle
+  - first:
+      23: 2300018
+    second: LegBack_Toe
+  - first:
+      23: 2300020
+    second: LegBack_Upper
+  - first:
+      23: 2300022
+    second: LegBackCtrl
+  - first:
+      23: 2300024
+    second: LegFront_Foot
+  - first:
+      23: 2300026
+    second: LegFront_Lower
+  - first:
+      23: 2300028
+    second: LegFront_Middle
+  - first:
+      23: 2300030
+    second: LegFront_Toe
+  - first:
+      23: 2300032
+    second: LegFront_Upper
+  - first:
+      23: 2300034
+    second: LegFrontCtrl
+  - first:
+      23: 2300036
+    second: LegLeft_Foot
+  - first:
+      23: 2300038
+    second: LegLeft_Lower
+  - first:
+      23: 2300040
+    second: LegLeft_Middle
+  - first:
+      23: 2300042
+    second: LegLeft_Toe
+  - first:
+      23: 2300044
+    second: LegLeft_Upper
+  - first:
+      23: 2300046
+    second: LegLeftCtrl
+  - first:
+      23: 2300048
+    second: LegRight_Foot
+  - first:
+      23: 2300050
+    second: LegRight_Lower
+  - first:
+      23: 2300052
+    second: LegRight_Middle
+  - first:
+      23: 2300054
+    second: LegRight_Toe
+  - first:
+      23: 2300056
+    second: LegRight_Upper
+  - first:
+      23: 2300058
+    second: LegRightCtrl
+  - first:
+      23: 2300060
+    second: LookAtCtrl
+  - first:
+      23: 2300062
+    second: Object01
+  - first:
+      23: 2300064
+    second: Plane01
+  - first:
+      23: 2300066
+    second: ShieldPlate_01
+  - first:
+      23: 2300068
+    second: ShieldPlate_02
+  - first:
+      23: 2300070
+    second: ShieldPlate_03
+  - first:
+      23: 2300072
+    second: ShieldPlate_04
+  - first:
+      23: 2300074
+    second: Weapon
+  - first:
+      23: 2300076
+    second: WeaponAttachment
+  - first:
+      33: 3300000
+    second: Antenna
+  - first:
+      33: 3300002
+    second: Body
+  - first:
+      33: 3300004
+    second: Core
+  - first:
+      33: 3300006
+    second: DroidShield
+  - first:
+      33: 3300008
+    second: Head
+  - first:
+      33: 3300010
+    second: HeadCtrl
+  - first:
+      33: 3300012
+    second: LegBack_Foot
+  - first:
+      33: 3300014
+    second: LegBack_Lower
+  - first:
+      33: 3300016
+    second: LegBack_Middle
+  - first:
+      33: 3300018
+    second: LegBack_Toe
+  - first:
+      33: 3300020
+    second: LegBack_Upper
+  - first:
+      33: 3300022
+    second: LegBackCtrl
+  - first:
+      33: 3300024
+    second: LegFront_Foot
+  - first:
+      33: 3300026
+    second: LegFront_Lower
+  - first:
+      33: 3300028
+    second: LegFront_Middle
+  - first:
+      33: 3300030
+    second: LegFront_Toe
+  - first:
+      33: 3300032
+    second: LegFront_Upper
+  - first:
+      33: 3300034
+    second: LegFrontCtrl
+  - first:
+      33: 3300036
+    second: LegLeft_Foot
+  - first:
+      33: 3300038
+    second: LegLeft_Lower
+  - first:
+      33: 3300040
+    second: LegLeft_Middle
+  - first:
+      33: 3300042
+    second: LegLeft_Toe
+  - first:
+      33: 3300044
+    second: LegLeft_Upper
+  - first:
+      33: 3300046
+    second: LegLeftCtrl
+  - first:
+      33: 3300048
+    second: LegRight_Foot
+  - first:
+      33: 3300050
+    second: LegRight_Lower
+  - first:
+      33: 3300052
+    second: LegRight_Middle
+  - first:
+      33: 3300054
+    second: LegRight_Toe
+  - first:
+      33: 3300056
+    second: LegRight_Upper
+  - first:
+      33: 3300058
+    second: LegRightCtrl
+  - first:
+      33: 3300060
+    second: LookAtCtrl
+  - first:
+      33: 3300062
+    second: Object01
+  - first:
+      33: 3300064
+    second: Plane01
+  - first:
+      33: 3300066
+    second: ShieldPlate_01
+  - first:
+      33: 3300068
+    second: ShieldPlate_02
+  - first:
+      33: 3300070
+    second: ShieldPlate_03
+  - first:
+      33: 3300072
+    second: ShieldPlate_04
+  - first:
+      33: 3300074
+    second: Weapon
+  - first:
+      33: 3300076
+    second: WeaponAttachment
+  - first:
+      43: 4300000
+    second: Body
+  - first:
+      43: 4300002
+    second: Core
+  - first:
+      43: 4300004
+    second: LegRight_Upper
+  - first:
+      43: 4300006
+    second: LegRight_Middle
+  - first:
+      43: 4300008
+    second: LegRight_Lower
+  - first:
+      43: 4300010
+    second: LegRight_Foot
+  - first:
+      43: 4300012
+    second: LegRight_Toe
+  - first:
+      43: 4300014
+    second: LegFront_Upper
+  - first:
+      43: 4300016
+    second: LegFront_Middle
+  - first:
+      43: 4300018
+    second: LegFront_Lower
+  - first:
+      43: 4300020
+    second: LegFront_Foot
+  - first:
+      43: 4300022
+    second: LegFront_Toe
+  - first:
+      43: 4300024
+    second: LegLeft_Upper
+  - first:
+      43: 4300026
+    second: LegLeft_Middle
+  - first:
+      43: 4300028
+    second: LegLeft_Lower
+  - first:
+      43: 4300030
+    second: LegLeft_Foot
+  - first:
+      43: 4300032
+    second: LegLeft_Toe
+  - first:
+      43: 4300034
+    second: LegBack_Upper
+  - first:
+      43: 4300036
+    second: LegBack_Middle
+  - first:
+      43: 4300038
+    second: LegBack_Lower
+  - first:
+      43: 4300040
+    second: LegBack_Foot
+  - first:
+      43: 4300042
+    second: LegBack_Toe
+  - first:
+      43: 4300044
+    second: DroidShield
+  - first:
+      43: 4300046
+    second: ShieldPlate_01
+  - first:
+      43: 4300048
+    second: ShieldPlate_04
+  - first:
+      43: 4300050
+    second: ShieldPlate_03
+  - first:
+      43: 4300052
+    second: ShieldPlate_02
+  - first:
+      43: 4300054
+    second: HeadCtrl
+  - first:
+      43: 4300056
+    second: Head
+  - first:
+      43: 4300058
+    second: Antenna
+  - first:
+      43: 4300060
+    second: Weapon
+  - first:
+      43: 4300062
+    second: WeaponAttachment
+  - first:
+      43: 4300064
+    second: LegBackCtrl
+  - first:
+      43: 4300066
+    second: LegFrontCtrl
+  - first:
+      43: 4300068
+    second: LegLeftCtrl
+  - first:
+      43: 4300070
+    second: LegRightCtrl
+  - first:
+      43: 4300072
+    second: LookAtCtrl
+  - first:
+      43: 4300074
+    second: Plane01
+  - first:
+      43: 4300076
+    second: Object01
+  - first:
+      74: 7400000
+    second: open
+  - first:
+      74: 7400002
+    second: idle
+  - first:
+      74: 7400004
+    second: closed
+  - first:
+      74: 7400006
+    second: jump
+  - first:
+      74: 7400008
+    second: landing
+  - first:
+      74: 7400010
+    second: inAirUp
+  - first:
+      74: 7400012
+    second: inAirDown
+  - first:
+      74: 7400014
+    second: damageFront
+  - first:
+      74: 7400016
+    second: damageBack
+  - first:
+      74: 7400018
+    second: damageLeft
+  - first:
+      74: 7400020
+    second: damageRight
+  - first:
+      95: 9500000
+    second: //RootNode
+  externalObjects: {}
+  materials:
+    materialImportMode: 0
+    materialName: 1
+    materialSearch: 2
+    materialLocation: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations:
+    - serializedVersion: 16
+      name: open
+      takeName: Take 001
+      internalID: 0
+      firstFrame: 85
+      lastFrame: 100
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 1
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Droid
+        weight: 1
+      - path: Droid/Body
+        weight: 1
+      - path: Droid/Body/Core
+        weight: 1
+      - path: Droid/Body/Core/DroidShield
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_01
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_02
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_03
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_04
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot/LegBack_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot/LegFront_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot/LegLeft_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot/LegRight_Toe
+        weight: 1
+      - path: Droid/Body/HeadCtrl
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Antenna
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon/WeaponAttachment
+        weight: 1
+      - path: Droid/LegBackCtrl
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower/Back_IKChainUpper
+        weight: 1
+      - path: Droid/LegFrontCtrl
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower/Front_IKChainUpper
+        weight: 1
+      - path: Droid/LegLeftCtrl
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower/Left_IKChainUpper
+        weight: 1
+      - path: Droid/LegRightCtrl
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower/Right_IKChainUpper
+        weight: 1
+      - path: Droid/LookAtCtrl
+        weight: 1
+      - path: Object01
+        weight: 1
+      - path: Plane01
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: idle
+      takeName: Take 001
+      internalID: 0
+      firstFrame: 101
+      lastFrame: 140
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 1
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Droid
+        weight: 1
+      - path: Droid/Body
+        weight: 1
+      - path: Droid/Body/Core
+        weight: 1
+      - path: Droid/Body/Core/DroidShield
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_01
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_02
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_03
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_04
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot/LegBack_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot/LegFront_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot/LegLeft_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot/LegRight_Toe
+        weight: 1
+      - path: Droid/Body/HeadCtrl
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Antenna
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon/WeaponAttachment
+        weight: 1
+      - path: Droid/LegBackCtrl
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower/Back_IKChainUpper
+        weight: 1
+      - path: Droid/LegFrontCtrl
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower/Front_IKChainUpper
+        weight: 1
+      - path: Droid/LegLeftCtrl
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower/Left_IKChainUpper
+        weight: 1
+      - path: Droid/LegRightCtrl
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower/Right_IKChainUpper
+        weight: 1
+      - path: Droid/LookAtCtrl
+        weight: 1
+      - path: Object01
+        weight: 1
+      - path: Plane01
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: closed
+      takeName: Take 001
+      internalID: 0
+      firstFrame: 85
+      lastFrame: 86
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 1
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Droid
+        weight: 1
+      - path: Droid/Body
+        weight: 1
+      - path: Droid/Body/Core
+        weight: 1
+      - path: Droid/Body/Core/DroidShield
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_01
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_02
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_03
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_04
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot/LegBack_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot/LegFront_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot/LegLeft_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot/LegRight_Toe
+        weight: 1
+      - path: Droid/Body/HeadCtrl
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Antenna
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon/WeaponAttachment
+        weight: 1
+      - path: Droid/LegBackCtrl
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower/Back_IKChainUpper
+        weight: 1
+      - path: Droid/LegFrontCtrl
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower/Front_IKChainUpper
+        weight: 1
+      - path: Droid/LegLeftCtrl
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower/Left_IKChainUpper
+        weight: 1
+      - path: Droid/LegRightCtrl
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower/Right_IKChainUpper
+        weight: 1
+      - path: Droid/LookAtCtrl
+        weight: 1
+      - path: Object01
+        weight: 1
+      - path: Plane01
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: jump
+      takeName: Take 001
+      internalID: 0
+      firstFrame: 140
+      lastFrame: 149
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events:
+      - time: 0.750379
+        functionName: DoJump
+        data: 
+        objectReferenceParameter: {instanceID: 0}
+        floatParameter: 0
+        intParameter: 0
+        messageOptions: 0
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Droid
+        weight: 1
+      - path: Droid/Body
+        weight: 1
+      - path: Droid/Body/Core
+        weight: 1
+      - path: Droid/Body/Core/DroidShield
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_01
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_02
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_03
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_04
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot/LegBack_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot/LegFront_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot/LegLeft_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot/LegRight_Toe
+        weight: 1
+      - path: Droid/Body/HeadCtrl
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Antenna
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon/WeaponAttachment
+        weight: 1
+      - path: Droid/LegBackCtrl
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower/Back_IKChainUpper
+        weight: 1
+      - path: Droid/LegFrontCtrl
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower/Front_IKChainUpper
+        weight: 1
+      - path: Droid/LegLeftCtrl
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower/Left_IKChainUpper
+        weight: 1
+      - path: Droid/LegRightCtrl
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower/Right_IKChainUpper
+        weight: 1
+      - path: Droid/LookAtCtrl
+        weight: 1
+      - path: Object01
+        weight: 1
+      - path: Plane01
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: landing
+      takeName: Take 001
+      internalID: 0
+      firstFrame: 154
+      lastFrame: 160
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Droid
+        weight: 1
+      - path: Droid/Body
+        weight: 1
+      - path: Droid/Body/Core
+        weight: 1
+      - path: Droid/Body/Core/DroidShield
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_01
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_02
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_03
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_04
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot/LegBack_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot/LegFront_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot/LegLeft_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot/LegRight_Toe
+        weight: 1
+      - path: Droid/Body/HeadCtrl
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Antenna
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon/WeaponAttachment
+        weight: 1
+      - path: Droid/LegBackCtrl
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower/Back_IKChainUpper
+        weight: 1
+      - path: Droid/LegFrontCtrl
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower/Front_IKChainUpper
+        weight: 1
+      - path: Droid/LegLeftCtrl
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower/Left_IKChainUpper
+        weight: 1
+      - path: Droid/LegRightCtrl
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower/Right_IKChainUpper
+        weight: 1
+      - path: Droid/LookAtCtrl
+        weight: 1
+      - path: Object01
+        weight: 1
+      - path: Plane01
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: inAirUp
+      takeName: Take 001
+      internalID: 0
+      firstFrame: 162
+      lastFrame: 163
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 1
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Droid
+        weight: 1
+      - path: Droid/Body
+        weight: 1
+      - path: Droid/Body/Core
+        weight: 1
+      - path: Droid/Body/Core/DroidShield
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_01
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_02
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_03
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_04
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot/LegBack_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot/LegFront_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot/LegLeft_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot/LegRight_Toe
+        weight: 1
+      - path: Droid/Body/HeadCtrl
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Antenna
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon/WeaponAttachment
+        weight: 1
+      - path: Droid/LegBackCtrl
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower/Back_IKChainUpper
+        weight: 1
+      - path: Droid/LegFrontCtrl
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower/Front_IKChainUpper
+        weight: 1
+      - path: Droid/LegLeftCtrl
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower/Left_IKChainUpper
+        weight: 1
+      - path: Droid/LegRightCtrl
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower/Right_IKChainUpper
+        weight: 1
+      - path: Droid/LookAtCtrl
+        weight: 1
+      - path: Object01
+        weight: 1
+      - path: Plane01
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: inAirDown
+      takeName: Take 001
+      internalID: 0
+      firstFrame: 165
+      lastFrame: 166
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 1
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Droid
+        weight: 1
+      - path: Droid/Body
+        weight: 1
+      - path: Droid/Body/Core
+        weight: 1
+      - path: Droid/Body/Core/DroidShield
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_01
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_02
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_03
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_04
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot/LegBack_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot/LegFront_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot/LegLeft_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot/LegRight_Toe
+        weight: 1
+      - path: Droid/Body/HeadCtrl
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Antenna
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon/WeaponAttachment
+        weight: 1
+      - path: Droid/LegBackCtrl
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower/Back_IKChainUpper
+        weight: 1
+      - path: Droid/LegFrontCtrl
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower/Front_IKChainUpper
+        weight: 1
+      - path: Droid/LegLeftCtrl
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower/Left_IKChainUpper
+        weight: 1
+      - path: Droid/LegRightCtrl
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower/Right_IKChainUpper
+        weight: 1
+      - path: Droid/LookAtCtrl
+        weight: 1
+      - path: Object01
+        weight: 1
+      - path: Plane01
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: damageFront
+      takeName: Take 001
+      internalID: 0
+      firstFrame: 171
+      lastFrame: 172
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Droid
+        weight: 1
+      - path: Droid/Body
+        weight: 1
+      - path: Droid/Body/Core
+        weight: 1
+      - path: Droid/Body/Core/DroidShield
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_01
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_02
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_03
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_04
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot/LegBack_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot/LegFront_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot/LegLeft_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot/LegRight_Toe
+        weight: 1
+      - path: Droid/Body/HeadCtrl
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Antenna
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon/WeaponAttachment
+        weight: 1
+      - path: Droid/LegBackCtrl
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower/Back_IKChainUpper
+        weight: 1
+      - path: Droid/LegFrontCtrl
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower/Front_IKChainUpper
+        weight: 1
+      - path: Droid/LegLeftCtrl
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower/Left_IKChainUpper
+        weight: 1
+      - path: Droid/LegRightCtrl
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower/Right_IKChainUpper
+        weight: 1
+      - path: Droid/LookAtCtrl
+        weight: 1
+      - path: Object01
+        weight: 1
+      - path: Plane01
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: damageBack
+      takeName: Take 001
+      internalID: 0
+      firstFrame: 174
+      lastFrame: 175
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Droid
+        weight: 1
+      - path: Droid/Body
+        weight: 1
+      - path: Droid/Body/Core
+        weight: 1
+      - path: Droid/Body/Core/DroidShield
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_01
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_02
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_03
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_04
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot/LegBack_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot/LegFront_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot/LegLeft_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot/LegRight_Toe
+        weight: 1
+      - path: Droid/Body/HeadCtrl
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Antenna
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon/WeaponAttachment
+        weight: 1
+      - path: Droid/LegBackCtrl
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower/Back_IKChainUpper
+        weight: 1
+      - path: Droid/LegFrontCtrl
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower/Front_IKChainUpper
+        weight: 1
+      - path: Droid/LegLeftCtrl
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower/Left_IKChainUpper
+        weight: 1
+      - path: Droid/LegRightCtrl
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower/Right_IKChainUpper
+        weight: 1
+      - path: Droid/LookAtCtrl
+        weight: 1
+      - path: Object01
+        weight: 1
+      - path: Plane01
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: damageLeft
+      takeName: Take 001
+      internalID: 0
+      firstFrame: 177
+      lastFrame: 178
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Droid
+        weight: 1
+      - path: Droid/Body
+        weight: 1
+      - path: Droid/Body/Core
+        weight: 1
+      - path: Droid/Body/Core/DroidShield
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_01
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_02
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_03
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_04
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot/LegBack_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot/LegFront_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot/LegLeft_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot/LegRight_Toe
+        weight: 1
+      - path: Droid/Body/HeadCtrl
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Antenna
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon/WeaponAttachment
+        weight: 1
+      - path: Droid/LegBackCtrl
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower/Back_IKChainUpper
+        weight: 1
+      - path: Droid/LegFrontCtrl
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower/Front_IKChainUpper
+        weight: 1
+      - path: Droid/LegLeftCtrl
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower/Left_IKChainUpper
+        weight: 1
+      - path: Droid/LegRightCtrl
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower/Right_IKChainUpper
+        weight: 1
+      - path: Droid/LookAtCtrl
+        weight: 1
+      - path: Object01
+        weight: 1
+      - path: Plane01
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: damageRight
+      takeName: Take 001
+      internalID: 0
+      firstFrame: 180
+      lastFrame: 181
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask:
+      - path: 
+        weight: 1
+      - path: Droid
+        weight: 1
+      - path: Droid/Body
+        weight: 1
+      - path: Droid/Body/Core
+        weight: 1
+      - path: Droid/Body/Core/DroidShield
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_01
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_02
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_03
+        weight: 1
+      - path: Droid/Body/Core/DroidShield/ShieldPlate_04
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegBack_Upper/LegBack_Middle/LegBack_Lower/LegBack_Foot/LegBack_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegFront_Upper/LegFront_Middle/LegFront_Lower/LegFront_Foot/LegFront_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegLeft_Upper/LegLeft_Middle/LegLeft_Lower/LegLeft_Foot/LegLeft_Toe
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot
+        weight: 1
+      - path: Droid/Body/Core/LegRight_Upper/LegRight_Middle/LegRight_Lower/LegRight_Foot/LegRight_Toe
+        weight: 1
+      - path: Droid/Body/HeadCtrl
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Antenna
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon
+        weight: 1
+      - path: Droid/Body/HeadCtrl/Head/Weapon/WeaponAttachment
+        weight: 1
+      - path: Droid/LegBackCtrl
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower
+        weight: 1
+      - path: Droid/LegBackCtrl/Back_IKChainLower/Back_IKChainUpper
+        weight: 1
+      - path: Droid/LegFrontCtrl
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower
+        weight: 1
+      - path: Droid/LegFrontCtrl/Front_IKChainLower/Front_IKChainUpper
+        weight: 1
+      - path: Droid/LegLeftCtrl
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower
+        weight: 1
+      - path: Droid/LegLeftCtrl/Left_IKChainLower/Left_IKChainUpper
+        weight: 1
+      - path: Droid/LegRightCtrl
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower
+        weight: 1
+      - path: Droid/LegRightCtrl/Right_IKChainLower/Right_IKChainUpper
+        weight: 1
+      - path: Droid/LookAtCtrl
+        weight: 1
+      - path: Object01
+        weight: 1
+      - path: Plane01
+        weight: 1
+      maskType: 0
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importPhysicalCameras: 0
+    importVisibility: 0
+    importBlendShapes: 1
+    importCameras: 0
+    importLights: 0
+    nodeNameCollisionStrategy: 0
+    fileIdsGeneration: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    bakeAxisConversion: 0
+    preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    meshOptimizationFlags: -1
+    indexFormat: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 0
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    strictVertexDataChecks: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 4
+    normalCalculationMode: 0
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  referencedClips: []
+  importAnimation: 1
+  humanDescription:
+    serializedVersion: 3
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    globalScale: 1
+    rootMotionBoneName: Droid
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 2
+  humanoidOversampling: 1
+  avatarSetup: 1
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 0
+  importBlendShapeDeformPercent: 0
+  remapMaterialsIfMaterialImportModeIsNone: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -24,6 +24,43 @@ public class GameObjectPool : BasePool<GameObject>
         onDestroy = OnDestroyObject;
     }
 
+    /// <summary>直接引用的预制体（prefabPath 与 prefabRef 二选一）</summary>
+    public GameObject prefabRef;
+
+    /// <summary>
+    /// 直接引用预制体的构造重载（预制体不在 Resources 目录时用这个，
+    /// 例如 Inspector 拖拽的特效引用）。取出回调不假设对象上有 Rigidbody
+    /// </summary>
+    public GameObjectPool(GameObject prefab, Transform parent = null, int maxSize = 10)
+        : base(null, null, null, null, maxSize)
+    {
+        prefabRef = prefab;
+        this.parentTransform = parent;
+
+        createFunc = CreateFromRef;
+        onGet = OnGetObjectSafe;
+        onRelease = OnReleaseObject;
+        onDestroy = OnDestroyObject;
+    }
+
+    private GameObject CreateFromRef()
+    {
+        if (prefabRef == null)
+        {
+            Debug.LogError("[GameObjectPool] prefabRef 未设置");
+            return new GameObject("PoolObj_MissingPrefab");
+        }
+        GameObject obj = GameObject.Instantiate(prefabRef, parentTransform);
+        obj.name = prefabRef.name; // 去掉 "(Clone)"
+        return obj;
+    }
+
+    /// <summary>安全的取出回调：不假设对象上有 Rigidbody（特效等通用对象用）</summary>
+    private void OnGetObjectSafe(GameObject obj)
+    {
+        obj.SetActive(true);
+    }
+
     private GameObject CreateGameObject()
     {
         GameObject prefab = Resources.Load<GameObject>(prefabPath);

@@ -268,8 +268,8 @@ public class WeaponController : MonoBehaviour
     private void SpawnMuzzleFlash(Vector3 position)
     {
         if (muzzleFlashPrefab == null) return;
-        var flash = Instantiate(muzzleFlashPrefab, position, transform.rotation);
-        Destroy(flash, vfxLifetime);
+        // 走 PoolManager 池化，播完自动归还
+        PooledVFX.Spawn(muzzleFlashPrefab, position, transform.rotation, vfxLifetime);
     }
 
     private void SpawnTracer(Vector3 origin, Vector3 direction, float distance)
@@ -288,8 +288,8 @@ public class WeaponController : MonoBehaviour
     private void SpawnImpact(Vector3 position, Vector3 normal)
     {
         if (impactPrefab == null) return;
-        var impact = Instantiate(impactPrefab, position, Quaternion.LookRotation(normal));
-        Destroy(impact, vfxLifetime);
+        // 走 PoolManager 池化，播完自动归还
+        PooledVFX.Spawn(impactPrefab, position, Quaternion.LookRotation(normal), vfxLifetime);
     }
 
     #endregion
