@@ -439,7 +439,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   localPlayerPrefab: {fileID: 824336454540823142, guid: cfd41f3f17a1c284886264dc647faed1, type: 3}
-  remotePlayerPrefab: {fileID: 8546965822301457256, guid: 384a1d65c1920284f9335730fddf39ed, type: 3}
+  remotePlayerPrefab: {fileID: 1295503427288474408, guid: a48966e47d969174a85f138832296612, type: 3}
   localPlayerSpawnPosition: {x: 0, y: 5, z: 0}
   remotePlayerSpawnRadius: 5
 --- !u!4 &874486478
@@ -573,6 +573,7 @@ GameObject:
   - component: {fileID: 963194228}
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
+  - component: {fileID: 963194229}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -654,6 +655,23 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &963194229
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 963194225}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb054c9801f2b2a4c869c256dfbf1517, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 0}
+  followSmoothTime: 0.08
+  viewGroundOffset: {x: 0, y: 6}
+  fireFeedbackEnabled: 1
+  findRetryInterval: 0.5
 --- !u!1 &987550577
 GameObject:
   m_ObjectHideFlags: 0

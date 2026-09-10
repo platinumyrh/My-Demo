@@ -376,6 +376,7 @@ public class LocalPlayerMovement : MonoBehaviour
         // 原始输入轴（角色本地空间）直接进混合树参数（horizontal/vertical）
         _anim.SetMoveInput(localDir.x, localDir.z);
         _anim.SetMoveSpeed(speed);          // 旧控制器 Speed 参数仍用真实速度（新模型自动跳过）
+        _anim.ApplyMoveAnimSpeed(input.IsSprinting); // 奔跑时切换动画播放倍率
 
         // 转向参数：本帧朝向角速度归一化（±720°/s 映射到 ±1），驱动 turnLeft/turnRight
         float yaw = transform.eulerAngles.y;

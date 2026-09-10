@@ -47,14 +47,20 @@ public class PlayerAnimationController : MonoBehaviour
     [SerializeField] private string damageDirYParam = "damageDirY";
 
     [Header("移动动画播放速度（需要 controller 里有 moveAnimSpeed 参数并绑到状态的 Speed Parameter）")]
-    [Tooltip("走路（速度接近0）时的动画播放倍率")]
-    [SerializeField] private float walkAnimSpeed = 1f;
+    [Tooltip("走路（未冲刺）时的动画播放倍率")]
+    [SerializeField] public float walkAnimSpeed = 1f;
 
-    [Tooltip("奔跑（速度拉满）时的动画播放倍率")]
-    [SerializeField] private float runAnimSpeed = 1f;
+    [Tooltip("奔跑（冲刺中）时的动画播放倍率")]
+    [SerializeField] public float runAnimSpeed = 1f;
 
     [Tooltip("驱动播放倍率的参数名")]
     [SerializeField] private string moveSpeedParamName = "moveAnimSpeed";
+
+    /// <summary>走路播放倍率（只读便捷访问）</summary>
+    public float WalkAnimSpeed => walkAnimSpeed;
+
+    /// <summary>奔跑播放倍率（只读便捷访问）</summary>
+    public float RunAnimSpeed => runAnimSpeed;
 
     [Header("速度映射")]
     [Tooltip("把 m/s 除以 maxMoveSpeed 归一化到 0~1 再喂给混合树。\n混合树阈值是 0 / 0.5 / 1 时必须开启。")]
@@ -280,6 +286,22 @@ public class PlayerAnimationController : MonoBehaviour
         if (_hasVertical) _anim.SetFloat(_verticalHash, Mathf.Clamp(inputZ, -1f, 1f));
 
         SetMoveSpeed(new Vector2(inputX, inputZ).magnitude);
+    }
+
+    /// <summary>
+    /// 设置移动动画播放速度倍率（驱动 controller 的 moveAnimSpeed → 状态 Speed Parameter）
+    /// 只缩放动画播放节奏，不影响混合方向
+    /// </summary>
+    public void SetMoveAnimSpeed(float multiplier)
+    {
+        if (_anim == null || !_hasMoveSpeed) return;
+        _anim.SetFloat(_moveSpeedHash, Mathf.Clamp(multiplier, 0.1f, 5f));
+    }
+
+    /// <summary>按奔跑/走路状态应用对应的动画播放速度倍率</summary>
+    public void ApplyMoveAnimSpeed(bool sprinting)
+    {
+        SetMoveAnimSpeed(sprinting ? runAnimSpeed : walkAnimSpeed);
     }
 
     /// <summary>转向参数（归一化 -1..1：负=左转，正=右转），驱动 turnLeft/turnRight 混合</summary>

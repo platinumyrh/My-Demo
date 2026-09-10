@@ -61,6 +61,9 @@ public class WeaponController : MonoBehaviour
     [Tooltip("画出每次开火的命中射线（红线，停留1秒）")]
     public bool drawShotRay = true;
 
+    [Tooltip("枪口火光轴向偏移：EffectCore 火光轴向特殊，-90°X 为实测校正值；仍不对时在此微调")]
+    [SerializeField] private Vector3 muzzleFlashRotationOffset = new Vector3(-90f, 0f, 0f);
+
     #endregion
 
     #region 状态
@@ -172,12 +175,12 @@ public class WeaponController : MonoBehaviour
 
     /// <summary>
     /// 远端玩家开火表现：跳过弹匣/射速判定，直接按给定弹道播放。
-    /// 命中法线由射手随事件传过来（射手本地 raycast 的真实表面法线），
-    /// 远端不做任何射线重放——打人打墙都直接用法线摆弹孔
+    /// 同时广播 OnFired 事件——武器动画控制器等纯表现监听者据此触发开火动作
+    /// （注意：远端预制体不要挂 LocalPlayerCombat，否则会重复上报网络事件）
     /// </summary>
     public void PlayFireVisual(Vector3 origin, Vector3 direction, Vector3 endPoint, bool hitSomething, Vector3 impactNormal)
     {
-        SpawnMuzzleFlash(origin);
+        SpawnMuzzleFlash(origin, direction);
         SpawnTracer(origin, direction, Vector3.Distance(origin, endPoint));
 
         if (hitSomething)
@@ -187,6 +190,16 @@ public class WeaponController : MonoBehaviour
             normal.Normalize();
             SpawnImpact(endPoint, normal);
         }
+
+        OnFired?.Invoke(new ShotInfo
+        {
+            Origin = origin,
+            Direction = direction,
+            EndPoint = endPoint,
+            HitCollider = null,
+            HitPlayerId = "",
+            HitNormal = -direction
+        });
     }
 
     /// <summary>远端换弹表现（重置弹匣显示）</summary>
@@ -220,7 +233,7 @@ public class WeaponController : MonoBehaviour
                 HitNormal = hit.normal
             };
 
-            SpawnMuzzleFlash(origin);
+            SpawnMuzzleFlash(origin, aimRay.direction);
             SpawnTracer(origin, aimRay.direction, Vector3.Distance(origin, hit.point));
             SpawnImpact(hit.point, hit.normal);
 
@@ -240,7 +253,7 @@ public class WeaponController : MonoBehaviour
                 HitNormal = -aimRay.direction
             };
 
-            SpawnMuzzleFlash(origin);
+            SpawnMuzzleFlash(origin, aimRay.direction);
             SpawnTracer(origin, aimRay.direction, Vector3.Distance(origin, shot.EndPoint));
 
             if (drawShotRay) Debug.DrawLine(origin, shot.EndPoint, Color.red, 1f);
@@ -265,11 +278,12 @@ public class WeaponController : MonoBehaviour
         return remote != null ? remote.playerId : null;
     }
 
-    private void SpawnMuzzleFlash(Vector3 position)
+    private void SpawnMuzzleFlash(Vector3 position, Vector3 direction)
     {
         if (muzzleFlashPrefab == null) return;
-        // 走 PoolManager 池化，播完自动归还
-        PooledVFX.Spawn(muzzleFlashPrefab, position, transform.rotation, vfxLifetime);
+        // 火光沿射击方向摆放（EffectCore 火光默认朝 +Y，用轴向偏移翻正）
+        Quaternion rot = Quaternion.LookRotation(direction) * Quaternion.Euler(muzzleFlashRotationOffset);
+        PooledVFX.Spawn(muzzleFlashPrefab, position, rot, vfxLifetime);
     }
 
     private void SpawnTracer(Vector3 origin, Vector3 direction, float distance)

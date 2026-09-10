@@ -15,6 +15,10 @@ public class RemotePlayerMovement : MonoBehaviour
 
     [Header("插值设置")]
     public float interpolationDelay = 0.033f; // 延迟插值，补偿网络抖动
+
+    [Header("动画")]
+    [Tooltip("速度超过该值视为奔跑，应用奔跑动画播放倍率（走路5/冲刺8时取中点）")]
+    public float runSpeedThreshold = 6.5f;
     public float correctionRate = 10f;      // 校正速率（每秒衰减的比例）
     public float snapDistance = 3f;         // 偏差超过该距离直接吸附
     public float rotationSpeed = 22f;       // 旋转平滑速度
@@ -144,6 +148,9 @@ public class RemotePlayerMovement : MonoBehaviour
         {
             _anim.SetMoveInput(0f, 0f);
         }
+
+        // 动画播放倍率：速度超过走路/冲刺中点视为奔跑（与本地表现保持一致）
+        _anim.ApplyMoveAnimSpeed(flatVel.magnitude > runSpeedThreshold);
 
         // 保活：服务端不是每帧都带该玩家的输入，没更新的帧沿用旧值
         bool alive = _hasInput && (Time.time - _lastInputTime <= inputHoldTime);
