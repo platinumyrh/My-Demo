@@ -222,11 +222,35 @@ public class FrameSyncManager : BaseManager<FrameSyncManager>
             remote.OnServerState(kvp.Value);
         }
 
+        // ③ 本地玩家生命值：hp/is_dead 是服务端结算结果，变化时发布事件供 UI/死亡表现消费
+        if (frameState.PlayerStates.TryGetValue(localPlayerId, out var localState))
+        {
+            PublishLocalVitalsIfChanged(localState.Hp, localState.IsDead);
+        }
+
         // 调试日志（每100帧输出一次）
         if (frameState.FrameId % 100 == 0)
         {
-            Debug.Log($"[FrameSyncManager] 🎮 帧 #{frameState.FrameId}, 位置状态: {frameState.PlayerStates.Count}");
+            //Debug.Log($"[FrameSyncManager] 🎮 帧 #{frameState.FrameId}, 位置状态: {frameState.PlayerStates.Count}");
         }
+    }
+
+    private int _lastLocalHp = -1;
+    private bool _lastLocalDead;
+
+    /// <summary>本地生命值变化时发布事件（快照每帧都带，仅变化时发布）</summary>
+    private void PublishLocalVitalsIfChanged(int hp, bool isDead)
+    {
+        if (hp == _lastLocalHp && isDead == _lastLocalDead) return;
+
+        _lastLocalHp = hp;
+        _lastLocalDead = isDead;
+
+        Debug.Log($"[FrameSyncManager] 💚 本地生命值变化: hp={hp}, dead={isDead}");
+        GameEventBus.GetInstance().Publish(
+            GameEventType.OnLocalVitalsChanged,
+            LocalVitalsEventData.Create(hp, isDead)
+        );
     }
 
     #endregion

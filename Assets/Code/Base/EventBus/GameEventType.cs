@@ -154,6 +154,16 @@ public enum GameEventType
     /// </summary>
     OnRemoteFired,
 
+    /// <summary>
+    /// 本地玩家生命值变化（从快照中检测到自己的 hp/is_dead 变化）
+    /// </summary>
+    OnLocalVitalsChanged,
+
+    /// <summary>
+    /// 玩家死亡广播（收到 S2C_PlayerDied，用于击杀归属与死亡表现）
+    /// </summary>
+    OnPlayerDied,
+
     #endregion
 
     #region 🔑 游戏控制事件（新增）

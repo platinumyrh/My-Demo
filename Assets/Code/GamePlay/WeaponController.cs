@@ -14,6 +14,9 @@ public class WeaponController : MonoBehaviour
 {
     #region 配置
 
+    [Tooltip("载具配置（配置后武器数值以 SO 为准，覆盖下方默认值）")]
+    [SerializeField] private PlayerProfileSO profile;
+
     [Header("射击参数")]
     [Tooltip("射速（发/秒）")]
     public float fireRate = 8f;
@@ -110,6 +113,16 @@ public class WeaponController : MonoBehaviour
 
     private void Awake()
     {
+        // 载具配置优先：SO 里的武器数值覆盖 Inspector 默认值（没配置则保持原值，兼容旧预制体）
+        if (profile != null)
+        {
+            fireRate = profile.weaponFireRate;
+            magazineSize = profile.weaponMagazineSize;
+            reloadTime = profile.weaponReloadTime;
+            damage = profile.weaponDamage;
+            maxRange = profile.weaponMaxRange;
+        }
+
         CurrentAmmo = magazineSize;
     }
 

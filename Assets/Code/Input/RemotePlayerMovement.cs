@@ -185,6 +185,9 @@ public class RemotePlayerMovement : MonoBehaviour
         _lastInputTime = Time.time;
         _hasInput = true;
 
+        // 头顶名牌血条同步（快照带服务端结算后的 hp）
+        _nameplate?.SetHp(state.Hp);
+
         // 诊断：第一次收到该玩家的状态时打一行，确认分发链路到达
         if (_positionBuffer.Count == 0)
         {
@@ -255,6 +258,7 @@ public class RemotePlayerMovement : MonoBehaviour
     }
 
     private WeaponController _weapon; // 惰性缓存
+    private NameplateUI _nameplate;   // 头顶名牌（惰性查找）
 
     /// <summary>
     /// （已废弃）旧输入积分接口，仅为兼容保留
@@ -320,6 +324,34 @@ public class RemotePlayerMovement : MonoBehaviour
     {
         playerId = id;
         gameObject.name = $"RemotePlayer_{id}";
+
+        // 头顶名牌显示玩家ID（惰性查找，首次设置时挂到节点上）
+        if (_nameplate == null) _nameplate = GetComponentInChildren<NameplateUI>(true);
+        _nameplate?.SetName(id);
+    }
+
+    /// <summary>
+    /// 死亡/复活表现（服务端结算的死亡广播驱动）：
+    /// 走动画门面的 SetDead → droid 模型进入 Inactive 状态
+    /// </summary>
+    public void SetDead(bool dead)
+    {
+        _anim?.SetDead(dead);
+    }
+
+    /// <summary>
+    /// 远端玩家的方向受击动画：
+    /// 受击方向 = 「该远端玩家位置 → 射手枪口」向量转进它自己的本地空间
+    /// （它的 yaw 是同步来的，所以各客户端算出的受击方向一致）
+    /// </summary>
+    public void PlayDamage(Vector3 shooterOrigin)
+    {
+        Vector3 incoming = shooterOrigin - transform.position;
+        incoming.y = 0f;
+        if (incoming.sqrMagnitude < 0.0001f) return;
+
+        Vector3 local = transform.InverseTransformDirection(incoming.normalized);
+        _anim?.PlayDamage(new Vector2(local.x, local.z));
     }
 
     /// <summary>

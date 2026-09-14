@@ -12,6 +12,9 @@ public class LocalPlayerMovement : MonoBehaviour
     #region 配置参数
 
     [Header("移动参数")]
+    [Tooltip("载具配置（配置后 walkSpeed/sprintSpeed 以 SO 为准，覆盖下方默认值）")]
+    [SerializeField] private PlayerProfileSO profile;
+
     public float walkSpeed = 2f;
     public float sprintSpeed = 5f;
 
@@ -75,6 +78,13 @@ public class LocalPlayerMovement : MonoBehaviour
 
     private void Start()
     {
+        // 载具配置优先：SO 里的移速覆盖 Inspector 手填值（没配置则保持原值，兼容旧预制体）
+        if (profile != null)
+        {
+            walkSpeed = profile.walkSpeed;
+            sprintSpeed = profile.sprintSpeed;
+        }
+
         _controller = GetComponent<CharacterController>();
         _playerInput = GetComponent<PlayerInputController>();
         _anim = PlayerAnimationController.Resolve(transform);
