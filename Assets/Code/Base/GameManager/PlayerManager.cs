@@ -89,6 +89,12 @@ public class PlayerManager : BaseManager<PlayerManager>
             OnRemoteFired
         );
 
+        // 玩家死亡广播 → 远端玩家播死亡表现（本地玩家由自己的结算事件处理）
+        eventBus.Subscribe<PlayerDiedEventData>(
+            GameEventType.OnPlayerDied,
+            OnPlayerDied
+        );
+
         // 注意：帧同步数据不走 EventBus，
         // 由 FrameSyncManager.OnServerFrame 直接调用 GetRemotePlayer 分发给远程玩家
 
@@ -119,6 +125,11 @@ public class PlayerManager : BaseManager<PlayerManager>
             OnRemoteFired
         );
 
+        eventBus.Unsubscribe<PlayerDiedEventData>(
+            GameEventType.OnPlayerDied,
+            OnPlayerDied
+        );
+
         _subscribedToEventBus = false;
     }
 
@@ -147,11 +158,41 @@ public class PlayerManager : BaseManager<PlayerManager>
     }
 
     /// <summary>
-    /// 远端玩家开火 → 交给对应的远程玩家播弹道特效
+    /// 远端玩家开火广播：
+    /// 1. 射手是远端玩家 → 在它的远端形象上播弹道特效（本地自己的开火已即时播放，跳过）
+    /// 2. 受击者是远端玩家 → 在它的远端形象上播方向受击动画（本地自己的受击由 OnLocalVitalsChanged/自身事件处理）
     /// </summary>
     private void OnRemoteFired(RemoteFiredEventData eventData)
     {
-        GetRemotePlayer(eventData.PlayerId)?.OnFireEvent(eventData);
+        string localId = NetworkManager.Instance != null
+            ? NetworkManager.Instance.GetLocalPlayerId()
+            : "";
+
+        if (eventData.PlayerId != localId)
+        {
+            GetRemotePlayer(eventData.PlayerId)?.OnFireEvent(eventData);
+        }
+
+        if (!string.IsNullOrEmpty(eventData.HitPlayerId) && eventData.HitPlayerId != localId)
+        {
+            GetRemotePlayer(eventData.HitPlayerId)?.PlayDamage(eventData.Origin);
+        }
+    }
+
+    /// <summary>
+    /// 玩家死亡广播 → 远端玩家播死亡表现
+    /// （本地玩家的死亡由自己的 OnLocalVitalsChanged 处理，这里跳过）
+    /// </summary>
+    private void OnPlayerDied(PlayerDiedEventData eventData)
+    {
+        string localId = NetworkManager.Instance != null
+            ? NetworkManager.Instance.GetLocalPlayerId()
+            : "";
+
+        if (eventData.VictimId == localId) return;
+
+        Debug.Log($"[PlayerManager] ☠️ 远程玩家死亡: {eventData.VictimId} (击杀者: {eventData.KillerId})");
+        GetRemotePlayer(eventData.VictimId)?.SetDead(true);
     }
 
     #endregion

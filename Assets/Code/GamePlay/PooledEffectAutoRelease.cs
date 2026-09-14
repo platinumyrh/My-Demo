@@ -17,6 +17,14 @@ public class PooledEffectAutoRelease : MonoBehaviour
         _poolKey = poolKey;
         _lifetime = Mathf.Max(0.05f, lifetime);
         _elapsed = 0f;
+
+        // 禁用特效包自带的演示脚本（如 ECExplodingProjectile）：
+        // 它们每帧 FixedUpdate 做 LookRotation 会刷 "viewing vector is zero" 报错
+        foreach (var mb in GetComponentsInChildren<MonoBehaviour>(true))
+        {
+            if (mb is PooledEffectAutoRelease) continue;
+            if (mb != null) mb.enabled = false;
+        }
     }
 
     private void Update()

@@ -118,12 +118,13 @@ public class NetworkHandler : MonoBehaviour
 
         // === 战斗事件 ===
         Register(MsgID.S2CFireEvent, FireEventNotify.Parser, OnFireEvent);
+        Register(MsgID.S2CPlayerDied, PlayerDiedNotify.Parser, OnPlayerDied);
 
         // === 游戏控制 ===
         Register(MsgID.S2CGameStart, GameStartNotify.Parser, OnGameStart);
         Register(MsgID.S2CGameOver, GameOverNotify.Parser, OnGameOver);
 
-        Debug.Log("[NetworkHandler] ✅ 已注册 11 个消息处理器");
+        Debug.Log("[NetworkHandler] ✅ 已注册 12 个消息处理器");
     }
 
     #endregion
@@ -343,6 +344,14 @@ public class NetworkHandler : MonoBehaviour
                 notify.HitPlayerId,
                 new UnityEngine.Vector3(notify.HitNormalX, notify.HitNormalY, notify.HitNormalZ)
             )
+        );
+    }
+
+    private void OnPlayerDied(PlayerDiedNotify notify)
+    {
+        EventBus.Publish(
+            GameEventType.OnPlayerDied,
+            PlayerDiedEventData.Create(notify.VictimId, notify.KillerId)
         );
     }
 

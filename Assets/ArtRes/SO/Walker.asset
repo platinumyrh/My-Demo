@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b406f16a9cc571f15beac1715f6b5512, type: 3}
   m_Name: Walker
   m_EditorClassIdentifier: 
-  maxHp: 100
+  maxHp: 99999
   walkSpeed: 5
   sprintSpeed: 8
   weaponDamage: 10
