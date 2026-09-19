@@ -7,18 +7,22 @@ namespace GameLockstep
     ///
     /// Tick 内固定顺序（全端必须一致，改动顺序 = 改协议）：
     ///   1. 按 PlayerId 升序逐个移动积分（缺指令 = 空指令，站桩）
-    ///   2. 圆形碰撞互推（跑两轮缓解多人堆叠残留，配对顺序按 id 升序）
-    ///   3. 世界边界钳制
+    ///   2. 战斗结算（冷却/换弹/开火 hitscan/伤害/死亡，基于移动后的位置）
+    ///   3. 圆形碰撞互推（跑两轮缓解多人堆叠残留，配对顺序按 id 升序）
+    ///   4. 世界边界钳制
     /// 输入延迟/本地预测/回滚重演（阶段3）在调用方完成——本类只消费"当前帧指令"，可重入重演
     /// </summary>
     public sealed class LogicWorld
     {
         private readonly List<LogicPlayer> _players = new List<LogicPlayer>(); // 始终按 PlayerId 升序
         private readonly Dictionary<int, LogicPlayer> _byId = new Dictionary<int, LogicPlayer>();
+        private readonly List<LogicEvent> _tickEvents = new List<LogicEvent>();
 
         public long Frame { get; private set; }
         public DeterministicRNG Rng { get; }
         public IReadOnlyList<LogicPlayer> Players => _players;
+        /// <summary>本帧产生的事件（Tick 开头清空）。回滚重演会重新生成，表现层需容忍重放</summary>
+        public IReadOnlyList<LogicEvent> TickEvents => _tickEvents;
 
         public LogicWorld(ulong rngSeed)
         {
@@ -52,6 +56,7 @@ namespace GameLockstep
         public void Tick(IReadOnlyDictionary<int, PlayerCommand> commands)
         {
             Frame++;
+            _tickEvents.Clear();
 
             // 1. 移动积分（缺指令按空指令处理，不卡帧）
             for (int i = 0; i < _players.Count; i++)
@@ -60,11 +65,18 @@ namespace GameLockstep
                 _players[i].ApplyMovement(cmd);
             }
 
-            // 2. 圆形碰撞互推
+            // 2. 战斗结算（基于移动后的位置；命中判定先于碰撞互推）
+            for (int i = 0; i < _players.Count; i++)
+            {
+                commands.TryGetValue(_players[i].PlayerId, out var cmd);
+                ProcessCombat(_players[i], cmd);
+            }
+
+            // 3. 圆形碰撞互推
             ResolveCollisions();
             ResolveCollisions();
 
-            // 3. 世界边界
+            // 4. 世界边界
             var limit = FP.FromRaw(LockstepConfig.WORLD_LIMIT);
             for (int i = 0; i < _players.Count; i++)
             {
@@ -74,6 +86,135 @@ namespace GameLockstep
                 if (p.Z > limit) p.Z = limit;
                 if (p.Z < -limit) p.Z = -limit;
             }
+        }
+
+        /// <summary>
+        /// 单玩家战斗结算：冷却/换弹推进 → 换弹判定 → 开火判定 → hitscan → 伤害/死亡。
+        /// 死亡者只让冷却收敛，不再有任何主动行为
+        /// </summary>
+        private void ProcessCombat(LogicPlayer p, in PlayerCommand cmd)
+        {
+            if (p.FireCooldownTicks > 0) p.FireCooldownTicks--;
+            if (p.IsDead) return;
+
+            if (p.ReloadTicksLeft > 0)
+            {
+                p.ReloadTicksLeft--;
+                if (p.ReloadTicksLeft == 0)
+                    p.Ammo = LockstepConfig.MAGAZINE_SIZE;
+                return; // 换弹中不能开火
+            }
+
+            if (cmd.Has(PlayerCommand.BTN_RELOAD) && p.Ammo < LockstepConfig.MAGAZINE_SIZE)
+            {
+                p.ReloadTicksLeft = LockstepConfig.RELOAD_TICKS;
+                return;
+            }
+
+            if (p.FireCooldownTicks > 0) return; // 开火冷却未到（不拦换弹）
+
+            if (!cmd.Has(PlayerCommand.BTN_FIRE)) return;
+
+            if (p.Ammo <= 0)
+            {
+                p.ReloadTicksLeft = LockstepConfig.RELOAD_TICKS; // 空仓自动换弹
+                return;
+            }
+
+            // 开火：定点数 hitscan——沿朝向的射线对其他存活玩家做圆形相交，最近者受击
+            p.Ammo--;
+            p.FireCooldownTicks = LockstepConfig.FIRE_COOLDOWN_TICKS;
+
+            var dir = FPTrig.Dir(p.Yaw);
+            var target = Hitscan(p, dir, out var hitX, out var hitZ);
+
+            var fired = new LogicEvent
+            {
+                Type = LogicEventType.Fired,
+                Frame = (int)Frame,
+                ShooterId = p.PlayerId,
+                TargetId = target?.PlayerId ?? 0,
+                OriginX = p.X,
+                OriginZ = p.Z,
+                DirX = dir.X,
+                DirZ = dir.Z,
+                HitX = hitX,
+                HitZ = hitZ,
+                Damage = target != null ? LockstepConfig.DAMAGE_PER_HIT : 0,
+            };
+            _tickEvents.Add(fired);
+
+            if (target == null) return;
+
+            target.Hp -= LockstepConfig.DAMAGE_PER_HIT;
+            _tickEvents.Add(new LogicEvent
+            {
+                Type = LogicEventType.Hit,
+                Frame = (int)Frame,
+                ShooterId = p.PlayerId,
+                TargetId = target.PlayerId,
+                OriginX = p.X,
+                OriginZ = p.Z,
+                DirX = dir.X,
+                DirZ = dir.Z,
+                HitX = hitX,
+                HitZ = hitZ,
+                Damage = LockstepConfig.DAMAGE_PER_HIT,
+            });
+
+            if (target.Hp <= 0)
+            {
+                target.Hp = 0;
+                target.IsDead = true;
+                _tickEvents.Add(new LogicEvent
+                {
+                    Type = LogicEventType.Died,
+                    Frame = (int)Frame,
+                    ShooterId = p.PlayerId,
+                    TargetId = target.PlayerId,
+                    Damage = LockstepConfig.DAMAGE_PER_HIT,
+                });
+            }
+        }
+
+        /// <summary>
+        /// 定点 hitscan：从射手位置沿 dir 的射线（射程 MAX_RANGE）检测其他存活玩家圆。
+        /// 命中点为圆心在射线上的最近投影点；距离相同取 PlayerId 靠前者（确定性平手规则）
+        /// </summary>
+        private LogicPlayer Hitscan(LogicPlayer shooter, FPVector2 dir, out FP hitX, out FP hitZ)
+        {
+            long rangeRaw = LockstepConfig.MAX_RANGE;
+            long radiusSqRaw = LockstepConfig.PLAYER_RADIUS * LockstepConfig.PLAYER_RADIUS; // 值×2^32 域
+
+            // 未命中默认：射程终点（表现层弹道终点）
+            hitX = shooter.X + dir.X * FP.FromRaw(rangeRaw);
+            hitZ = shooter.Z + dir.Z * FP.FromRaw(rangeRaw);
+
+            LogicPlayer best = null;
+            long bestTRaw = rangeRaw;
+
+            for (int i = 0; i < _players.Count; i++)
+            {
+                var t = _players[i];
+                if (t == shooter || t.IsDead) continue; // 死者不挡弹（穿透）
+
+                var proj = (t.X - shooter.X) * dir.X + (t.Z - shooter.Z) * dir.Z; // 沿射线距离
+                if (proj.Raw < 0 || proj.Raw > rangeRaw) continue;                // 背后或超射程
+
+                var closestX = shooter.X + dir.X * proj;
+                var closestZ = shooter.Z + dir.Z * proj;
+                long distSq = FP.SqrDistance(closestX, closestZ, t.X, t.Z);
+                if (distSq > radiusSqRaw) continue;
+
+                if (proj.Raw < bestTRaw)
+                {
+                    bestTRaw = proj.Raw;
+                    best = t;
+                    hitX = closestX;
+                    hitZ = closestZ;
+                }
+            }
+            return best;
         }
 
         /// <summary>
