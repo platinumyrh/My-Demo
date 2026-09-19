@@ -30,6 +30,10 @@ namespace GameLockstep
         /// <summary>状态哈希校验间隔（逻辑帧）：每 N 帧全量哈希一次用于漂移比对</summary>
         public const int HASH_INTERVAL = 45; // 15Hz 下每 3 秒
 
+        /// <summary>客户端预测超前上限（帧）：最多模拟到 已确认帧+此值。
+        /// 覆盖典型 RTT+输入延迟的抖动余量；服务器断流时预测自然停在此处不空转</summary>
+        public const int MAX_PREDICTION_FRAMES = 8;
+
         // ===== 定点数（与 FP 类强耦合的常量） =====
 
         /// <summary>Q16.16 定点数：小数位数</summary>

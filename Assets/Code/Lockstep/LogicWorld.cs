@@ -128,6 +128,61 @@ namespace GameLockstep
             z = dir.Z * radius;
         }
 
+        /// <summary>拍摄快照（当前帧结束态）。回滚重演（阶段3）/断线重连（阶段8）的基础</summary>
+        public LogicWorldSnapshot CaptureSnapshot()
+        {
+            var players = new PlayerSnap[_players.Count];
+            for (int i = 0; i < _players.Count; i++)
+            {
+                var p = _players[i];
+                players[i] = new PlayerSnap
+                {
+                    PlayerId = p.PlayerId,
+                    X = p.X.Raw,
+                    Z = p.Z.Raw,
+                    Y = p.Y.Raw,
+                    VerticalVelocity = p.VerticalVelocity.Raw,
+                    Yaw = p.Yaw,
+                    MaxHp = p.MaxHp,
+                    Hp = p.Hp,
+                    Ammo = p.Ammo,
+                    FireCooldownTicks = p.FireCooldownTicks,
+                    ReloadTicksLeft = p.ReloadTicksLeft,
+                    IsDead = p.IsDead,
+                };
+            }
+            return new LogicWorldSnapshot { Frame = Frame, RngState = Rng.State, Players = players };
+        }
+
+        /// <summary>恢复快照。要求玩家集合与快照时一致——成员变更需重建世界（阶段8 重连流程）</summary>
+        public void RestoreSnapshot(LogicWorldSnapshot snapshot)
+        {
+            if (snapshot.Players.Length != _players.Count)
+                throw new System.InvalidOperationException(
+                    $"快照玩家数({snapshot.Players.Length})与当前世界({_players.Count})不一致");
+            for (int i = 0; i < snapshot.Players.Length; i++)
+            {
+                if (snapshot.Players[i].PlayerId != _players[i].PlayerId)
+                    throw new System.InvalidOperationException("快照玩家集合与当前世界不一致");
+
+                var p = _players[i];
+                var s = snapshot.Players[i];
+                p.X = FP.FromRaw(s.X);
+                p.Z = FP.FromRaw(s.Z);
+                p.Y = FP.FromRaw(s.Y);
+                p.VerticalVelocity = FP.FromRaw(s.VerticalVelocity);
+                p.Yaw = s.Yaw;
+                p.MaxHp = s.MaxHp;
+                p.Hp = s.Hp;
+                p.Ammo = s.Ammo;
+                p.FireCooldownTicks = s.FireCooldownTicks;
+                p.ReloadTicksLeft = s.ReloadTicksLeft;
+                p.IsDead = s.IsDead;
+            }
+            Frame = snapshot.Frame;
+            Rng.Restore(snapshot.RngState);
+        }
+
         /// <summary>状态哈希（阶段8 跨端漂移比对用）。纯整数混合，禁用运行时相关哈希（如字符串 GetHashCode）</summary>
         public long ComputeStateHash()
         {

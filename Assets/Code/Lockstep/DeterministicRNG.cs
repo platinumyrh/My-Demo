@@ -19,6 +19,9 @@ namespace GameLockstep
 
         public ulong State => _state;
 
+        /// <summary>恢复内部状态（快照回滚用——只接受快照来源的值，不用于任意注入）</summary>
+        public void Restore(ulong state) => _state = state;
+
         /// <summary>下一个 64 位随机数（xorshift64*，周期 2^64-1）</summary>
         public ulong NextULong()
         {
