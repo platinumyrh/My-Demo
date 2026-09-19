@@ -78,30 +78,19 @@ namespace GameLockstep
             return dx * dx + dz * dz;
         }
 
-        /// <summary>平方根（牛顿迭代整数实现，确定性）。输入为原始 long（通常是 SqrDistance 结果）</summary>
+        /// <summary>平方根（牛顿迭代整数实现，确定性）。
+        /// 输入约定：SqrDistance 的返回值（差值平方和 = 值×2^32 域）——
+        /// isqrt(值×2^32) 恰好 = sqrt(值)×2^16，结果天然就是 Q16.16，无需任何移位</summary>
         public static FP Sqrt(long raw)
         {
             if (raw <= 0) return new FP(0);
-            if (raw > int.MaxValue) return new FP(0); // Q32 输入超界保护
 
-            // 牛顿迭代在整数域逼近 sqrt(raw)（结果放大 2^8 后还原精度）
-            // 标准 ISO 算法（来自 Hacker's Delight 的 isqrt）
             long x = raw;
             long y = (x + 1) / 2;
             while (y < x)
             {
                 x = y;
                 y = (x + raw / x) / 2;
-            }
-            // x = isqrt(raw)，把它升到 Q16.16：需要 sqrt(raw << 16)，
-            // 直接重算（输入限制在 int 范围内避免移位溢出）
-            long shifted = raw << 16;
-            x = shifted;
-            y = (x + 1) / 2;
-            while (y < x)
-            {
-                x = y;
-                y = (x + shifted / x) / 2;
             }
             return new FP(x);
         }
@@ -128,7 +117,7 @@ namespace GameLockstep
         public static FPVector2 operator -(FPVector2 a, FPVector2 b) => new FPVector2(a.X - b.X, a.Z - b.Z);
         public static FPVector2 operator *(FPVector2 a, FP b) => new FPVector2(a.X * b, a.Z * b);
 
-        public FP SqrMagnitude => new FP(FP.SqrDistance(X, Z, FPVector2.Zero.X, FPVector2.Zero.Z));
+        public FP SqrMagnitude => new FP(FP.SqrDistance(X, Z, FPVector2.Zero.X, FPVector2.Zero.Z) >> LockstepConfig.FP_FRACTIONAL_BITS); // SqrDistance 是值×2^32 域，右移 16 位才是 Q16.16
 
         public FPVector2 Normalized
         {
@@ -150,11 +139,12 @@ namespace GameLockstep
     {
         public const int MASK = LockstepConfig.ANGLE_STEPS - 1;
 
-        /// <summary>角度差（考虑环绕，结果在 -32768..32767）</summary>
+        /// <summary>角度差（考虑环绕，结果在 -32768..32767，正值=顺时针）</summary>
         public static int Delta(int from, int to)
         {
+            // C# 的 & 按二进制补码取低 16 位：负差值的结果同样落在 0..65535，天然完成环绕取模
             int d = (to - from) & MASK;
-            if (d > MASK / 2 + 1) d -= LockstepConfig.ANGLE_STEPS;
+            if (d >= LockstepConfig.ANGLE_STEPS / 2) d -= LockstepConfig.ANGLE_STEPS;
             return d;
         }
 
@@ -206,7 +196,7 @@ namespace GameLockstep
                 double cz = Math.Sin(rad);
 
                 // 直接建方向表（Unity 约定：0° 朝 +Z，角度绕 Y 顺时针→x=sin, z=cos）
-                _dirX[i] = new FP((long)Math.Round(cx * FP.One * 0 + Math.Sin(rad) * FP.One));
+                _dirX[i] = new FP((long)Math.Round(Math.Sin(rad) * FP.One));
                 _dirZ[i] = new FP((long)Math.Round(Math.Cos(rad) * FP.One));
                 _cosTable[i] = new FP((long)Math.Round(cx * FP.One));
             }

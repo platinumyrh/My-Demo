@@ -60,15 +60,20 @@ public static class LockstepMathTests
         Check("0°朝+Z", dir0.Z.ToFloat() > 0.99f && Mathf.Abs(dir0.X.ToFloat()) < 0.02f);
 
         // ===== 环绕角 =====
-        Check("环绕角差 350°→10° = 20°", FPAngle.Delta(FPAngle.FromDegrees(350), FPAngle.FromDegrees(10)) ==
-              FPAngle.FromDegrees(20));
+        // 度数无法整除角刻度（65536/360 非整数），两端各自截断量化会引入 ±2 步噪声，用容差比较
+        int wrapDelta = FPAngle.Delta(FPAngle.FromDegrees(350), FPAngle.FromDegrees(10));
+        Check("环绕角差 350°→10° ≈ 20°", Mathf.Abs(wrapDelta - FPAngle.FromDegrees(20)) <= 2,
+              $"got={wrapDelta} expect≈{FPAngle.FromDegrees(20)}");
 
-        // ===== Sqrt =====
-        var s = FP.Sqrt(9L << 32); // sqrt(9.0 in Q32 domain) —— 直接验证定点域
-        // 简化验证：Sqrt(SqrDistance) ≈ 已知距离
+        int wrapDeltaBack = FPAngle.Delta(FPAngle.FromDegrees(10), FPAngle.FromDegrees(350));
+        Check("环绕角差 10°→350° ≈ -20°", Mathf.Abs(wrapDeltaBack + FPAngle.FromDegrees(20)) <= 2,
+              $"got={wrapDeltaBack} expect≈-{FPAngle.FromDegrees(20)}");
+
+        // ===== Sqrt（输入是 SqrDistance 的返回值） =====
         long sqr = FP.SqrDistance(FP.FromInt(0), FP.FromInt(0), FP.FromInt(3), FP.FromInt(4));
         var dist = FP.Sqrt(sqr);
         Check("Sqrt 3-4-5", Mathf.Abs(dist.ToFloat() - 5f) < 0.001f, $"got={dist.ToFloat():F4}");
+        Check("Sqrt 2 ≈ 1.4142", Mathf.Abs(FP.Sqrt(2L << 32).ToFloat() - 1.41421f) < 0.001f);
 
         // ===== RNG 确定性 =====
         var rng1 = new DeterministicRNG(12345);
