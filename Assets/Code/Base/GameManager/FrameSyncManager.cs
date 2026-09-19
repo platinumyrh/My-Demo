@@ -238,6 +238,9 @@ public class FrameSyncManager : BaseManager<FrameSyncManager>
     private int _lastLocalHp = -1;
     private bool _lastLocalDead;
 
+    /// <summary>本地玩家是否已死亡（服务端结算结果随快照下发；移动/战斗脚本据此锁定）</summary>
+    public bool IsLocalDead => _lastLocalDead;
+
     /// <summary>本地生命值变化时发布事件（快照每帧都带，仅变化时发布）</summary>
     private void PublishLocalVitalsIfChanged(int hp, bool isDead)
     {
@@ -246,7 +249,6 @@ public class FrameSyncManager : BaseManager<FrameSyncManager>
         _lastLocalHp = hp;
         _lastLocalDead = isDead;
 
-        Debug.Log($"[FrameSyncManager] 💚 本地生命值变化: hp={hp}, dead={isDead}");
         GameEventBus.GetInstance().Publish(
             GameEventType.OnLocalVitalsChanged,
             LocalVitalsEventData.Create(hp, isDead)

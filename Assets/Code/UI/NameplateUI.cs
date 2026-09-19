@@ -168,15 +168,6 @@ public class NameplateUI : MonoBehaviour
         if (fillImage == null) return;
         float ratio = maxHp > 0 ? Mathf.Clamp01((float)current / maxHp) : 0f;
 
-        // 诊断：比例变化时打印（确认结算数值到达 UI 层）
-        float last = barMode == HpBarMode.Width
-            ? fillImage.rectTransform.sizeDelta.x / Mathf.Max(0.01f, _baseBarWidth)
-            : fillImage.fillAmount;
-        if (!Mathf.Approximately(last, ratio))
-        {
-            Debug.Log($"[NameplateUI] 血量变化: {last:P0} → {ratio:P0} ({current}/{maxHp})");
-        }
-
         if (barMode == HpBarMode.Width)
         {
             // 改 Fill 宽度：配合父级 Horizontal Layout，血条从右侧收缩

@@ -161,7 +161,9 @@ public class GameInitializer : MonoBehaviour
             if (playerId == localId) continue;
 
             int remoteIndex = members.IndexOf(playerId);
-            playerManager.CreateRemotePlayer(playerId, playerId, SlotOf(remoteIndex));
+            playerManager.CreateRemotePlayer(playerId,
+                playerManager.ResolveDisplayName(playerId, playerId),
+                SlotOf(remoteIndex));
         }
 
         Debug.Log($"[GameInitializer] 📋 远程玩家已按房间成员重建，共 {members.Count - 1} 人");

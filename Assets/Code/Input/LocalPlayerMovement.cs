@@ -176,6 +176,9 @@ public class LocalPlayerMovement : MonoBehaviour
         var frameSync = FrameSyncManager.GetInstance();
         if (frameSync == null || !frameSync.IsSyncing) return;
 
+        // 死亡锁定：死亡后不再移动（服务端也不再接受其位置更新）
+        if (frameSync.IsLocalDead) return;
+
         // 1. 先算瞄准：鼠标 → 世界瞄准点 → 目标朝向（必须早于 GetCurrentInput，Rotation 要写进包里）
         UpdateAim();
         DrawAimDebug();
@@ -425,6 +428,9 @@ public class LocalPlayerMovement : MonoBehaviour
             input.PosY = transform.position.y;
             input.PosZ = transform.position.z;
             input.RotY = transform.eulerAngles.y;
+
+            // 附带载具配置名（hold-last：服务端首次收到时按其初始化血量上限）
+            input.Vehicle = profile != null ? profile.name : "";
 
             NetworkManager.Instance.Send(MsgID.C2SPlayerInput, input);
         }

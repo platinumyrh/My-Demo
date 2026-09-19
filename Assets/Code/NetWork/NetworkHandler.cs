@@ -219,6 +219,9 @@ public class NetworkHandler : MonoBehaviour
         {
             Debug.Log($"[NetworkHandler] ✅ 加入房间: {resp.RoomInfo.RoomName}");
 
+            // 记录房间成员的昵称（GameInitializer 重建远端玩家时显示用）
+            PlayerManager.GetInstance()?.RecordPlayerNames(resp.RoomInfo);
+
             var playerIds = new List<string>();
             foreach (var player in resp.RoomInfo.Players)
             {

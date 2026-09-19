@@ -188,12 +188,6 @@ public class RemotePlayerMovement : MonoBehaviour
         // 头顶名牌血条同步（快照带服务端结算后的 hp）
         _nameplate?.SetHp(state.Hp);
 
-        // 诊断：第一次收到该玩家的状态时打一行，确认分发链路到达
-        if (_positionBuffer.Count == 0)
-        {
-            Debug.Log($"[RemotePlayerMovement] 🎮 [{playerId}] 首次应用权威位置 {position}");
-        }
-
         var snapshot = new PositionSnapshot
         {
             FrameId = 0,
@@ -237,9 +231,6 @@ public class RemotePlayerMovement : MonoBehaviour
     /// </summary>
     public void OnFireEvent(RemoteFiredEventData eventData)
     {
-        // 探针：确认事件到达远端并找到了远程玩家
-        Debug.Log($"[RemotePlayerMovement] 🔫 [{playerId}] 收到远端开火事件 hit={eventData.HitSomething}");
-
         if (_weapon == null)
         {
             _weapon = GetComponentInChildren<WeaponController>();
@@ -318,16 +309,21 @@ public class RemotePlayerMovement : MonoBehaviour
     #region 公开方法 - 设置/清理
 
     /// <summary>
-    /// 设置玩家ID
+    /// 设置玩家ID（同步/字典键用）
     /// </summary>
     public void SetPlayerId(string id)
     {
         playerId = id;
         gameObject.name = $"RemotePlayer_{id}";
+    }
 
-        // 头顶名牌显示玩家ID（惰性查找，首次设置时挂到节点上）
+    /// <summary>
+    /// 设置显示名（昵称，名牌用；惰性查找名牌节点）
+    /// </summary>
+    public void SetDisplayName(string displayName)
+    {
         if (_nameplate == null) _nameplate = GetComponentInChildren<NameplateUI>(true);
-        _nameplate?.SetName(id);
+        _nameplate?.SetName(string.IsNullOrEmpty(displayName) ? playerId : displayName);
     }
 
     /// <summary>
@@ -351,6 +347,7 @@ public class RemotePlayerMovement : MonoBehaviour
         if (incoming.sqrMagnitude < 0.0001f) return;
 
         Vector3 local = transform.InverseTransformDirection(incoming.normalized);
+
         _anim?.PlayDamage(new Vector2(local.x, local.z));
     }
 

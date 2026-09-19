@@ -39,6 +39,9 @@ public class PlayerManager : BaseManager<PlayerManager>
     // 远程玩家字典 (playerId → RemotePlayerMovement)
     private Dictionary<string, RemotePlayerMovement> _remotePlayers = new Dictionary<string, RemotePlayerMovement>();
 
+    // 玩家ID → 昵称（加入房间时记录；GameInitializer 重建远端玩家时用于名牌显示）
+    private Dictionary<string, string> _playerNames = new Dictionary<string, string>();
+
     // 本地玩家引用
     private LocalPlayerMovement _localPlayer;
 
@@ -144,6 +147,9 @@ public class PlayerManager : BaseManager<PlayerManager>
     {
         Debug.Log($"[PlayerManager] 👋 远程玩家加入: {eventData.PlayerName} ({eventData.PlayerId})");
 
+        // 记录昵称（名牌显示用），供开局重建远端玩家时取用
+        _playerNames[eventData.PlayerId] = eventData.PlayerName;
+
         CreateRemotePlayer(eventData.PlayerId, eventData.PlayerName);
     }
 
@@ -237,6 +243,34 @@ public class PlayerManager : BaseManager<PlayerManager>
     }
 
     /// <summary>
+    /// 记录房间成员昵称（从加入房间的响应中；名牌显示用）
+    /// </summary>
+    public void RecordPlayerNames(GameNetwork.RoomInfo roomInfo)
+    {
+        if (roomInfo == null) return;
+
+        foreach (var player in roomInfo.Players)
+        {
+            if (!string.IsNullOrEmpty(player.PlayerName))
+            {
+                _playerNames[player.PlayerId] = player.PlayerName;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 解析玩家显示名：优先用加入时记录的昵称，其次调用方给的 fallback，最后用 ID
+    /// </summary>
+    public string ResolveDisplayName(string playerId, string fallback)
+    {
+        if (_playerNames.TryGetValue(playerId, out var name) && !string.IsNullOrEmpty(name))
+        {
+            return name;
+        }
+        return string.IsNullOrEmpty(fallback) ? playerId : fallback;
+    }
+
+    /// <summary>
     /// 创建远程玩家
     /// </summary>
     /// <param name="playerId">玩家ID</param>
@@ -284,6 +318,7 @@ public class PlayerManager : BaseManager<PlayerManager>
         if (remoteMovement != null)
         {
             remoteMovement.SetPlayerId(playerId);
+            remoteMovement.SetDisplayName(ResolveDisplayName(playerId, playerName));
             remoteMovement.SetPosition(spawnPos);
 
             _remotePlayers[playerId] = remoteMovement;

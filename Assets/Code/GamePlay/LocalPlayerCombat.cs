@@ -258,7 +258,6 @@ public class LocalPlayerCombat : MonoBehaviour
         if (incoming.sqrMagnitude < 0.0001f) return;
 
         Vector3 local = transform.InverseTransformDirection(incoming.normalized);
-        Debug.Log($"[LocalPlayerCombat] 💥 受击（来自 {local} 方向），播放受击动画");
 
         _anim?.PlayDamage(new Vector2(local.x, local.z));
     }
