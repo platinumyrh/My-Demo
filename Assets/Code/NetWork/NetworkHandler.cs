@@ -380,12 +380,13 @@ public class NetworkHandler : MonoBehaviour
     {
         Debug.Log($"[NetworkHandler] 🎮 游戏开始! Room: {notify.RoomId}");
 
-        // lockstep 初始化信息旁路给驱动层（种子/帧率/座位表；
-        // 旧服务器这些字段为默认值，驱动层据此判断回退旧链路）
+        // lockstep 初始化：种子/帧率/座位表。
+        // 驱动层据此启动会话（旧服务器字段为默认值时自动回退旧链路）
         var seats = new List<KeyValuePair<string, int>>(notify.Seats.Count);
         foreach (var s in notify.Seats)
             seats.Add(new KeyValuePair<string, int>(s.PlayerId, s.Seat));
         LockstepNetEvents.RaiseGameStart(notify.LockstepSeed, notify.TickRate, seats);
+        LockstepGameDriver.BeginSession(notify.LockstepSeed, notify.TickRate, seats);
 
         EventBus.Publish(
             GameEventType.OnGameStart,

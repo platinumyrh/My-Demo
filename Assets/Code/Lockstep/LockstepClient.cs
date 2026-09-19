@@ -31,9 +31,11 @@ namespace GameLockstep
         private readonly Dictionary<int, PlayerCommand> _lastKnown = new Dictionary<int, PlayerCommand>();//玩家id，输入指令；记录其他玩家最后一次确认的指令
         //权威缓冲区。网络层收到的服务器真值暂时扔在这里。因为网络是乱序的，必须等齐了才能按顺序吃（Advance 的 A 阶段）。
         private readonly Dictionary<long, Dictionary<int, PlayerCommand>> _authBuffer = new Dictionary<long, Dictionary<int, PlayerCommand>>();
-        //
+        //记录我预测第 N 帧时，到底用了哪些人的什么输入。当服务器发来真值时，用它来对比（SameInputs）。
         private readonly Dictionary<long, Dictionary<int, PlayerCommand>> _usedInputs = new Dictionary<long, Dictionary<int, PlayerCommand>>();
+        //每模拟一帧，就把世界的状态存个档。回滚时，直接读档到“分歧帧的前一帧”。
         private readonly Dictionary<long, LogicWorldSnapshot> _snapshots = new Dictionary<long, LogicWorldSnapshot>();
+        //本地产生的指令，先扔进这个队列。等网络层调用
         private readonly Queue<KeyValuePair<long, PlayerCommand>> _pendingSends = new Queue<KeyValuePair<long, PlayerCommand>>();
 
         public LockstepClient(int localPlayerId, LogicWorld world)
