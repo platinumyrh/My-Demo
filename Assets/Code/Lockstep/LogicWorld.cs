@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace GameLockstep
 {
@@ -18,7 +18,7 @@ namespace GameLockstep
         private readonly Dictionary<int, LogicPlayer> _byId = new Dictionary<int, LogicPlayer>();
         private readonly List<LogicEvent> _tickEvents = new List<LogicEvent>();
 
-        public long Frame { get; private set; }
+        public long Frame { get; private set; }//帧号
         public DeterministicRNG Rng { get; }
         public IReadOnlyList<LogicPlayer> Players => _players;
         /// <summary>本帧产生的事件（Tick 开头清空）。回滚重演会重新生成，表现层需容忍重放</summary>
@@ -128,7 +128,7 @@ namespace GameLockstep
             var dir = FPTrig.Dir(p.Yaw);
             var target = Hitscan(p, dir, out var hitX, out var hitZ);
 
-            var fired = new LogicEvent
+            var fired = new LogicEvent//添加一个开火事件到事件列表
             {
                 Type = LogicEventType.Fired,
                 Frame = (int)Frame,
@@ -147,7 +147,7 @@ namespace GameLockstep
             if (target == null) return;
 
             target.Hp -= LockstepConfig.DAMAGE_PER_HIT;
-            _tickEvents.Add(new LogicEvent
+            _tickEvents.Add(new LogicEvent//添加一个命中事件到事件列表
             {
                 Type = LogicEventType.Hit,
                 Frame = (int)Frame,
@@ -166,7 +166,7 @@ namespace GameLockstep
             {
                 target.Hp = 0;
                 target.IsDead = true;
-                _tickEvents.Add(new LogicEvent
+                _tickEvents.Add(new LogicEvent//添加一个死亡事件到事件列表
                 {
                     Type = LogicEventType.Died,
                     Frame = (int)Frame,

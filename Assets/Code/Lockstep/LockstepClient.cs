@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace GameLockstep
@@ -27,9 +27,11 @@ namespace GameLockstep
         /// <summary>发生过的回滚重演次数（性能/调试观测用）</summary>
         public int RollbackCount { get; private set; }
 
-        private readonly Dictionary<long, PlayerCommand> _localCommands = new Dictionary<long, PlayerCommand>();
-        private readonly Dictionary<int, PlayerCommand> _lastKnown = new Dictionary<int, PlayerCommand>();
+        private readonly Dictionary<long, PlayerCommand> _localCommands = new Dictionary<long, PlayerCommand>();//帧号，输入指令；记录本地玩家的输入情况
+        private readonly Dictionary<int, PlayerCommand> _lastKnown = new Dictionary<int, PlayerCommand>();//玩家id，输入指令；记录其他玩家最后一次确认的指令
+        //权威缓冲区。网络层收到的服务器真值暂时扔在这里。因为网络是乱序的，必须等齐了才能按顺序吃（Advance 的 A 阶段）。
         private readonly Dictionary<long, Dictionary<int, PlayerCommand>> _authBuffer = new Dictionary<long, Dictionary<int, PlayerCommand>>();
+        //
         private readonly Dictionary<long, Dictionary<int, PlayerCommand>> _usedInputs = new Dictionary<long, Dictionary<int, PlayerCommand>>();
         private readonly Dictionary<long, LogicWorldSnapshot> _snapshots = new Dictionary<long, LogicWorldSnapshot>();
         private readonly Queue<KeyValuePair<long, PlayerCommand>> _pendingSends = new Queue<KeyValuePair<long, PlayerCommand>>();

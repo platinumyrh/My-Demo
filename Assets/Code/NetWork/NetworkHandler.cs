@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using GameNetwork;
+using GameLockstep;
 using Google.Protobuf;
 using System;
 using System.Collections.Generic;
@@ -115,6 +116,9 @@ public class NetworkHandler : MonoBehaviour
 
         // === 帧同步（高频路径，直调 FrameSyncManager）===
         Register(MsgID.S2CFrameState, FrameStateResp.Parser, OnFrameState);
+
+        // === lockstep 帧同步（新链路，高频直调转换层→事件枢纽，与旧链路并行）===
+        Register(MsgID.S2CLockstepInputs, LockstepInputsNotify.Parser, OnLockstepInputs);
 
         // === 战斗事件 ===
         Register(MsgID.S2CFireEvent, FireEventNotify.Parser, OnFireEvent);
@@ -360,11 +364,28 @@ public class NetworkHandler : MonoBehaviour
 
     #endregion
 
+    #region Handler 实现 - lockstep（新链路）
+
+    private void OnLockstepInputs(LockstepInputsNotify notify)
+    {
+        foreach (var frame in notify.Frames)
+            LockstepNetEvents.RaiseFrameInputs(frame.Frame, LockstepProtoConvert.ToInputs(frame));
+    }
+
+    #endregion
+
     #region Handler 实现 - 游戏控制
 
     private void OnGameStart(GameStartNotify notify)
     {
         Debug.Log($"[NetworkHandler] 🎮 游戏开始! Room: {notify.RoomId}");
+
+        // lockstep 初始化信息旁路给驱动层（种子/帧率/座位表；
+        // 旧服务器这些字段为默认值，驱动层据此判断回退旧链路）
+        var seats = new List<KeyValuePair<string, int>>(notify.Seats.Count);
+        foreach (var s in notify.Seats)
+            seats.Add(new KeyValuePair<string, int>(s.PlayerId, s.Seat));
+        LockstepNetEvents.RaiseGameStart(notify.LockstepSeed, notify.TickRate, seats);
 
         EventBus.Publish(
             GameEventType.OnGameStart,
