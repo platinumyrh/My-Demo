@@ -142,27 +142,8 @@ public enum GameEventType
 
     #region 🔑 帧同步事件
 
-    // 注意：帧同步数据（S2C_FrameState）是高频消息，不走 EventBus，
-    // 由 NetworkHandler 解析后直接调用 FrameSyncManager.OnServerFrame
-
-    #endregion
-
-    #region 🔑 战斗事件（新增）
-
-    /// <summary>
-    /// 远端玩家开火（收到 S2C_FireEvent 广播，低频走 EventBus）
-    /// </summary>
-    OnRemoteFired,
-
-    /// <summary>
-    /// 本地玩家生命值变化（从快照中检测到自己的 hp/is_dead 变化）
-    /// </summary>
-    OnLocalVitalsChanged,
-
-    /// <summary>
-    /// 玩家死亡广播（收到 S2C_PlayerDied，用于击杀归属与死亡表现）
-    /// </summary>
-    OnPlayerDied,
+    // lockstep 高频帧数据不走 EventBus，
+    // 由 NetworkHandler 解析后直接送入 LockstepNetEvents / LockstepGameDriver。
 
     #endregion
 

@@ -1,0 +1,144 @@
+﻿syntax = "proto3";
+
+package GameNetwork;
+
+// ============================================
+// 消息ID枚举：只保留房间/登录/游戏控制/lockstep
+// ============================================
+enum MsgID {
+    MSG_NONE = 0;
+
+    // === 心跳 ===
+    C2S_HeartBeat = 1;
+    S2C_HeartBeat = 2;
+
+    // === 房间管理 ===
+    C2S_CreateRoom = 10;
+    S2C_CreateRoom = 11;
+    C2S_JoinRoom = 12;
+    S2C_JoinRoom = 13;
+    C2S_LeaveRoom = 14;
+    S2C_LeaveRoom = 15;
+    C2S_GetRoomList = 16;
+    S2C_RoomList = 17;
+    S2C_PlayerJoin = 18;
+    S2C_PlayerLeave = 19;
+    C2S_StartGame = 20;
+
+    // === 游戏控制 ===
+    S2C_GameStart = 50;
+    S2C_GameOver = 51;
+
+    // === 登录认证 ===
+    C2S_Login = 70;
+    S2C_Login = 71;
+
+    // === lockstep 帧同步 ===
+    C2S_LockstepCommand = 90;
+    S2C_LockstepInputs = 91;
+}
+
+message HeartBeatReq { int64 timestamp = 1; }
+message HeartBeatResp { int64 server_time = 1; int64 client_time = 2; }
+
+message CreateRoomReq {
+    string room_name = 1;
+    string password = 2;
+    string room_id = 3;
+}
+message CreateRoomResp {
+    bool success = 1;
+    string room_id = 2;
+    string message = 3;
+    string player_id = 4;
+}
+message JoinRoomReq {
+    string room_id = 1;
+    string password = 2;
+}
+message JoinRoomResp {
+    bool success = 1;
+    string room_id = 2;
+    RoomInfo room_info = 3;
+    string message = 4;
+    string player_id = 5;
+}
+message LeaveRoomReq { string room_id = 1; }
+message LeaveRoomResp { bool success = 1; string message = 2; }
+message GetRoomListReq {}
+message RoomListResp { repeated RoomInfo rooms = 1; }
+message PlayerJoinNotify { PlayerInfo player = 1; }
+message PlayerLeaveNotify { string player_id = 1; }
+
+message RoomInfo {
+    string room_id = 1;
+    string room_name = 2;
+    string host_id = 3;
+    int32 max_players = 4;
+    int32 current_players = 5;
+    bool has_password = 6;
+    bool is_playing = 7;
+    repeated PlayerInfo players = 8;
+}
+message PlayerInfo {
+    string player_id = 1;
+    string player_name = 2;
+    bool is_ready = 3;
+}
+
+message StartGameReq {}
+message LockstepSeat {
+    string player_id = 1;
+    int32 seat = 2;
+}
+message GameStartNotify {
+    string room_id = 1;
+    int64 start_time = 2;
+    uint64 lockstep_seed = 3;
+    int32 tick_rate = 4;
+    repeated LockstepSeat seats = 5;
+}
+message GameOverNotify {
+    string room_id = 1;
+    string winner_id = 2;
+    int32 reason = 3;
+}
+
+message LoginReq {
+    string username = 1;
+    string password = 2;
+}
+message LoginResp {
+    bool success = 1;
+    string user_id = 2;
+    string username = 3;
+    string token = 4;
+    int64 expire_time = 5;
+    string message = 6;
+}
+
+// lockstep 指令：网上只传整数指令，位置/血量/开火结果全部由各端确定性模拟生成
+message LockstepCommandData {
+    int64 frame = 1;
+    int32 move_x = 2;
+    int32 move_z = 3;
+    int32 aim_angle = 4;
+    uint32 buttons = 5;
+}
+message LockstepCommandReq {
+    repeated LockstepCommandData commands = 1;
+}
+message LockstepPlayerCommand {
+    int32 seat = 1;
+    int32 move_x = 2;
+    int32 move_z = 3;
+    int32 aim_angle = 4;
+    uint32 buttons = 5;
+}
+message LockstepFrameInputs {
+    int64 frame = 1;
+    repeated LockstepPlayerCommand commands = 2;
+}
+message LockstepInputsNotify {
+    repeated LockstepFrameInputs frames = 1;
+}

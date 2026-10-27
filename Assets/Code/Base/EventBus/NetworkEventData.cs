@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 /// <summary>
 /// 网络相关事件数据
@@ -285,66 +284,6 @@ public class PlayerLeftRoomEventData : GameEventData
     public static PlayerLeftRoomEventData Create(string playerId)
     {
         return new PlayerLeftRoomEventData { PlayerId = playerId };
-    }
-}
-
-#endregion
-
-#region 游戏控制事件数据
-
-/// <summary>
-/// 远端玩家开火事件数据（NetworkHandler 解析 S2C_FireEvent 后发布）
-/// </summary>
-public class RemoteFiredEventData : GameEventData
-{
-    public string PlayerId { get; set; } = "";
-    public Vector3 Origin { get; set; }
-    public Vector3 Direction { get; set; }
-    public Vector3 EndPoint { get; set; }
-    public bool HitSomething { get; set; }
-    public string HitPlayerId { get; set; } = "";
-    public Vector3 HitNormal { get; set; }
-
-    public static RemoteFiredEventData Create(string playerId, Vector3 origin, Vector3 direction, Vector3 endPoint, bool hitSomething, string hitPlayerId, Vector3 hitNormal)
-    {
-        return new RemoteFiredEventData
-        {
-            PlayerId = playerId,
-            Origin = origin,
-            Direction = direction,
-            EndPoint = endPoint,
-            HitSomething = hitSomething,
-            HitPlayerId = hitPlayerId,
-            HitNormal = hitNormal
-        };
-    }
-}
-
-/// <summary>
-/// 本地玩家生命值变化事件数据（FrameSyncManager 从快照中检测到自己的 hp/is_dead 变化时发布）
-/// </summary>
-public class LocalVitalsEventData : GameEventData
-{
-    public int Hp { get; set; }
-    public bool IsDead { get; set; }
-
-    public static LocalVitalsEventData Create(int hp, bool isDead)
-    {
-        return new LocalVitalsEventData { Hp = hp, IsDead = isDead };
-    }
-}
-
-/// <summary>
-/// 玩家死亡事件数据（收到 S2C_PlayerDied 广播）
-/// </summary>
-public class PlayerDiedEventData : GameEventData
-{
-    public string VictimId { get; set; } = "";
-    public string KillerId { get; set; } = "";
-
-    public static PlayerDiedEventData Create(string victimId, string killerId)
-    {
-        return new PlayerDiedEventData { VictimId = victimId, KillerId = killerId };
     }
 }
 
