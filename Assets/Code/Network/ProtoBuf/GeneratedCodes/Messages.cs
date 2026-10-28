@@ -46,11 +46,11 @@ namespace GameNetwork {
             "aXNfcGxheWluZxgHIAEoCBIoCgdwbGF5ZXJzGAggAygLMhcuR2FtZU5ldHdv",
             "cmsuUGxheWVySW5mbyJGCgpQbGF5ZXJJbmZvEhEKCXBsYXllcl9pZBgBIAEo",
             "CRITCgtwbGF5ZXJfbmFtZRgCIAEoCRIQCghpc19yZWFkeRgDIAEoCCIOCgxT",
-            "dGFydEdhbWVSZXEiLwoMTG9ja3N0ZXBTZWF0EhEKCXBsYXllcl9pZBgBIAEo",
-            "CRIMCgRzZWF0GAIgASgFIooBCg9HYW1lU3RhcnROb3RpZnkSDwoHcm9vbV9p",
-            "ZBgBIAEoCRISCgpzdGFydF90aW1lGAIgASgDEhUKDWxvY2tzdGVwX3NlZWQY",
-            "AyABKAQSEQoJdGlja19yYXRlGAQgASgFEigKBXNlYXRzGAUgAygLMhkuR2Ft",
-            "ZU5ldHdvcmsuTG9ja3N0ZXBTZWF0IkQKDkdhbWVPdmVyTm90aWZ5Eg8KB3Jv",
+            "dGFydEdhbWVSZXEiigEKD0dhbWVTdGFydE5vdGlmeRIPCgdyb29tX2lkGAEg",
+            "ASgJEhIKCnN0YXJ0X3RpbWUYAiABKAMSFQoNbG9ja3N0ZXBfc2VlZBgDIAEo",
+            "BBIRCgl0aWNrX3JhdGUYBCABKAUSKAoFc2VhdHMYBSADKAsyGS5HYW1lTmV0",
+            "d29yay5Mb2Nrc3RlcFNlYXQiLwoMTG9ja3N0ZXBTZWF0EhEKCXBsYXllcl9p",
+            "ZBgBIAEoCRIMCgRzZWF0GAIgASgFIkQKDkdhbWVPdmVyTm90aWZ5Eg8KB3Jv",
             "b21faWQYASABKAkSEQoJd2lubmVyX2lkGAIgASgJEg4KBnJlYXNvbhgDIAEo",
             "BSIuCghMb2dpblJlcRIQCgh1c2VybmFtZRgBIAEoCRIQCghwYXNzd29yZBgC",
             "IAEoCSJ0CglMb2dpblJlc3ASDwoHc3VjY2VzcxgBIAEoCBIPCgd1c2VyX2lk",
@@ -93,8 +93,8 @@ namespace GameNetwork {
             new pbr::GeneratedClrTypeInfo(typeof(global::GameNetwork.RoomInfo), global::GameNetwork.RoomInfo.Parser, new[]{ "RoomId", "RoomName", "HostId", "MaxPlayers", "CurrentPlayers", "HasPassword", "IsPlaying", "Players" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::GameNetwork.PlayerInfo), global::GameNetwork.PlayerInfo.Parser, new[]{ "PlayerId", "PlayerName", "IsReady" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::GameNetwork.StartGameReq), global::GameNetwork.StartGameReq.Parser, null, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::GameNetwork.LockstepSeat), global::GameNetwork.LockstepSeat.Parser, new[]{ "PlayerId", "Seat" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::GameNetwork.GameStartNotify), global::GameNetwork.GameStartNotify.Parser, new[]{ "RoomId", "StartTime", "LockstepSeed", "TickRate", "Seats" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::GameNetwork.LockstepSeat), global::GameNetwork.LockstepSeat.Parser, new[]{ "PlayerId", "Seat" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::GameNetwork.GameOverNotify), global::GameNetwork.GameOverNotify.Parser, new[]{ "RoomId", "WinnerId", "Reason" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::GameNetwork.LoginReq), global::GameNetwork.LoginReq.Parser, new[]{ "Username", "Password" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::GameNetwork.LoginResp), global::GameNetwork.LoginResp.Parser, new[]{ "Success", "UserId", "Username", "Token", "ExpireTime", "Message" }, null, null, null, null),
@@ -111,50 +111,98 @@ namespace GameNetwork {
   #region Enums
   /// <summary>
   /// ============================================
-  /// 消息ID枚举：只保留房间/登录/游戏控制/lockstep
+  /// 消息ID枚举（用于标识消息类型）
   /// ============================================
   /// </summary>
   public enum MsgID {
+    /// <summary>
+    /// 无效消息
+    /// </summary>
     [pbr::OriginalName("MSG_NONE")] MsgNone = 0,
     /// <summary>
-    /// === 心跳 ===
+    /// === 心跳相关 (1-9) ===
     /// </summary>
     [pbr::OriginalName("C2S_HeartBeat")] C2SHeartBeat = 1,
+    /// <summary>
+    /// 服务端 → 客户端：心跳响应
+    /// </summary>
     [pbr::OriginalName("S2C_HeartBeat")] S2CHeartBeat = 2,
     /// <summary>
-    /// === 房间管理 ===
+    /// === 房间管理 (10-29) ===
     /// </summary>
     [pbr::OriginalName("C2S_CreateRoom")] C2SCreateRoom = 10,
+    /// <summary>
+    /// 服务端 → 客户端：创建房间结果
+    /// </summary>
     [pbr::OriginalName("S2C_CreateRoom")] S2CCreateRoom = 11,
+    /// <summary>
+    /// 客户端 → 服务端：加入房间
+    /// </summary>
     [pbr::OriginalName("C2S_JoinRoom")] C2SJoinRoom = 12,
+    /// <summary>
+    /// 服务端 → 客户端：加入房间结果
+    /// </summary>
     [pbr::OriginalName("S2C_JoinRoom")] S2CJoinRoom = 13,
+    /// <summary>
+    /// 客户端 → 服务端：离开房间
+    /// </summary>
     [pbr::OriginalName("C2S_LeaveRoom")] C2SLeaveRoom = 14,
+    /// <summary>
+    /// 服务端 → 客户端：离开房间结果
+    /// </summary>
     [pbr::OriginalName("S2C_LeaveRoom")] S2CLeaveRoom = 15,
+    /// <summary>
+    /// 客户端 → 服务端：获取房间列表
+    /// </summary>
     [pbr::OriginalName("C2S_GetRoomList")] C2SGetRoomList = 16,
+    /// <summary>
+    /// 服务端 → 客户端：房间列表
+    /// </summary>
     [pbr::OriginalName("S2C_RoomList")] S2CRoomList = 17,
+    /// <summary>
+    /// 服务端 → 客户端广播：有玩家加入
+    /// </summary>
     [pbr::OriginalName("S2C_PlayerJoin")] S2CPlayerJoin = 18,
+    /// <summary>
+    /// 服务端 → 客户端广播：有玩家离开
+    /// </summary>
     [pbr::OriginalName("S2C_PlayerLeave")] S2CPlayerLeave = 19,
+    /// <summary>
+    /// 客户端 → 服务端：房主开始游戏
+    /// </summary>
     [pbr::OriginalName("C2S_StartGame")] C2SStartGame = 20,
     /// <summary>
-    /// === 游戏控制 ===
+    /// === 游戏事件 (50-69) ===
     /// </summary>
     [pbr::OriginalName("S2C_GameStart")] S2CGameStart = 50,
+    /// <summary>
+    /// 服务端 → 客户端：游戏结束
+    /// </summary>
     [pbr::OriginalName("S2C_GameOver")] S2CGameOver = 51,
     /// <summary>
-    /// === 登录认证 ===
+    /// === 登录认证 (70-79) ===
     /// </summary>
     [pbr::OriginalName("C2S_Login")] C2SLogin = 70,
+    /// <summary>
+    /// 服务端 → 客户端：登录响应
+    /// </summary>
     [pbr::OriginalName("S2C_Login")] S2CLogin = 71,
     /// <summary>
-    /// === lockstep 帧同步 ===
+    /// === lockstep 帧同步 (90-99) ===
     /// </summary>
     [pbr::OriginalName("C2S_LockstepCommand")] C2SLockstepCommand = 90,
+    /// <summary>
+    /// 服务端 → 客户端：封帧后的全员指令广播（可多帧合包）
+    /// </summary>
     [pbr::OriginalName("S2C_LockstepInputs")] S2CLockstepInputs = 91,
   }
 
   #endregion
 
   #region Messages
+  /// <summary>
+  /// 心跳请求（客户端发送）
+  /// </summary>
   public sealed partial class HeartBeatReq : pb::IMessage<HeartBeatReq>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -202,6 +250,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "timestamp" field.</summary>
     public const int TimestampFieldNumber = 1;
     private long timestamp_;
+    /// <summary>
+    /// 客户端时间戳
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public long Timestamp {
@@ -344,6 +395,9 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 心跳响应（服务端返回）
+  /// </summary>
   public sealed partial class HeartBeatResp : pb::IMessage<HeartBeatResp>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -392,6 +446,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "server_time" field.</summary>
     public const int ServerTimeFieldNumber = 1;
     private long serverTime_;
+    /// <summary>
+    /// 服务器时间戳
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public long ServerTime {
@@ -404,6 +461,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "client_time" field.</summary>
     public const int ClientTimeFieldNumber = 2;
     private long clientTime_;
+    /// <summary>
+    /// 回显客户端时间戳（用于计算延迟）
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public long ClientTime {
@@ -570,6 +630,9 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 创建房间请求
+  /// </summary>
   public sealed partial class CreateRoomReq : pb::IMessage<CreateRoomReq>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -619,6 +682,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "room_name" field.</summary>
     public const int RoomNameFieldNumber = 1;
     private string roomName_ = "";
+    /// <summary>
+    /// 房间名称（可选）
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string RoomName {
@@ -631,6 +697,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "password" field.</summary>
     public const int PasswordFieldNumber = 2;
     private string password_ = "";
+    /// <summary>
+    /// 密码（可选，空则无密码）
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string Password {
@@ -643,6 +712,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "room_id" field.</summary>
     public const int RoomIdFieldNumber = 3;
     private string roomId_ = "";
+    /// <summary>
+    /// 房间ID（可选，空则服务端自动生成）
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string RoomId {
@@ -833,6 +905,9 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 创建房间响应
+  /// </summary>
   public sealed partial class CreateRoomResp : pb::IMessage<CreateRoomResp>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -883,6 +958,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "success" field.</summary>
     public const int SuccessFieldNumber = 1;
     private bool success_;
+    /// <summary>
+    /// 是否成功
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public bool Success {
@@ -895,6 +973,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "room_id" field.</summary>
     public const int RoomIdFieldNumber = 2;
     private string roomId_ = "";
+    /// <summary>
+    /// 房间ID（成功时返回）
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string RoomId {
@@ -907,6 +988,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "message" field.</summary>
     public const int MessageFieldNumber = 3;
     private string message_ = "";
+    /// <summary>
+    /// 错误信息（失败时返回）
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string Message {
@@ -919,6 +1003,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "player_id" field.</summary>
     public const int PlayerIdFieldNumber = 4;
     private string playerId_ = "";
+    /// <summary>
+    /// 本玩家的ID（服务端分配，用于帧同步对齐）
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string PlayerId {
@@ -1133,6 +1220,9 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 加入房间请求
+  /// </summary>
   public sealed partial class JoinRoomReq : pb::IMessage<JoinRoomReq>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -1181,6 +1271,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "room_id" field.</summary>
     public const int RoomIdFieldNumber = 1;
     private string roomId_ = "";
+    /// <summary>
+    /// 房间ID
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string RoomId {
@@ -1193,6 +1286,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "password" field.</summary>
     public const int PasswordFieldNumber = 2;
     private string password_ = "";
+    /// <summary>
+    /// 密码（如果有）
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string Password {
@@ -1359,6 +1455,9 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 加入房间响应
+  /// </summary>
   public sealed partial class JoinRoomResp : pb::IMessage<JoinRoomResp>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -1410,6 +1509,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "success" field.</summary>
     public const int SuccessFieldNumber = 1;
     private bool success_;
+    /// <summary>
+    /// 是否成功
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public bool Success {
@@ -1422,6 +1524,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "room_id" field.</summary>
     public const int RoomIdFieldNumber = 2;
     private string roomId_ = "";
+    /// <summary>
+    /// 房间ID
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string RoomId {
@@ -1434,6 +1539,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "room_info" field.</summary>
     public const int RoomInfoFieldNumber = 3;
     private global::GameNetwork.RoomInfo roomInfo_;
+    /// <summary>
+    /// 房间信息（成功时返回）
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public global::GameNetwork.RoomInfo RoomInfo {
@@ -1446,6 +1554,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "message" field.</summary>
     public const int MessageFieldNumber = 4;
     private string message_ = "";
+    /// <summary>
+    /// 错误信息
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string Message {
@@ -1458,6 +1569,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "player_id" field.</summary>
     public const int PlayerIdFieldNumber = 5;
     private string playerId_ = "";
+    /// <summary>
+    /// 本玩家的ID（服务端分配，用于帧同步对齐）
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string PlayerId {
@@ -1705,6 +1819,9 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 离开房间请求
+  /// </summary>
   public sealed partial class LeaveRoomReq : pb::IMessage<LeaveRoomReq>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -1752,6 +1869,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "room_id" field.</summary>
     public const int RoomIdFieldNumber = 1;
     private string roomId_ = "";
+    /// <summary>
+    /// 房间ID
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string RoomId {
@@ -1894,6 +2014,9 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 离开房间响应
+  /// </summary>
   public sealed partial class LeaveRoomResp : pb::IMessage<LeaveRoomResp>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -1942,6 +2065,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "success" field.</summary>
     public const int SuccessFieldNumber = 1;
     private bool success_;
+    /// <summary>
+    /// 是否成功
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public bool Success {
@@ -1954,6 +2080,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "message" field.</summary>
     public const int MessageFieldNumber = 2;
     private string message_ = "";
+    /// <summary>
+    /// 信息
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string Message {
@@ -2120,6 +2249,9 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 获取房间列表请求
+  /// </summary>
   public sealed partial class GetRoomListReq : pb::IMessage<GetRoomListReq>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -2272,6 +2404,9 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 房间列表响应
+  /// </summary>
   public sealed partial class RoomListResp : pb::IMessage<RoomListResp>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -2321,6 +2456,9 @@ namespace GameNetwork {
     private static readonly pb::FieldCodec<global::GameNetwork.RoomInfo> _repeated_rooms_codec
         = pb::FieldCodec.ForMessage(10, global::GameNetwork.RoomInfo.Parser);
     private readonly pbc::RepeatedField<global::GameNetwork.RoomInfo> rooms_ = new pbc::RepeatedField<global::GameNetwork.RoomInfo>();
+    /// <summary>
+    /// 房间列表
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public pbc::RepeatedField<global::GameNetwork.RoomInfo> Rooms {
@@ -2450,6 +2588,9 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 玩家加入广播（通知房间内其他玩家）
+  /// </summary>
   public sealed partial class PlayerJoinNotify : pb::IMessage<PlayerJoinNotify>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -2497,6 +2638,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "player" field.</summary>
     public const int PlayerFieldNumber = 1;
     private global::GameNetwork.PlayerInfo player_;
+    /// <summary>
+    /// 加入的玩家信息
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public global::GameNetwork.PlayerInfo Player {
@@ -2648,6 +2792,9 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 玩家离开广播
+  /// </summary>
   public sealed partial class PlayerLeaveNotify : pb::IMessage<PlayerLeaveNotify>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -2695,6 +2842,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "player_id" field.</summary>
     public const int PlayerIdFieldNumber = 1;
     private string playerId_ = "";
+    /// <summary>
+    /// 离开的玩家ID
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string PlayerId {
@@ -2837,6 +2987,9 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 房间信息
+  /// </summary>
   public sealed partial class RoomInfo : pb::IMessage<RoomInfo>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -2891,6 +3044,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "room_id" field.</summary>
     public const int RoomIdFieldNumber = 1;
     private string roomId_ = "";
+    /// <summary>
+    /// 房间唯一ID
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string RoomId {
@@ -2903,6 +3059,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "room_name" field.</summary>
     public const int RoomNameFieldNumber = 2;
     private string roomName_ = "";
+    /// <summary>
+    /// 房间名称
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string RoomName {
@@ -2915,6 +3074,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "host_id" field.</summary>
     public const int HostIdFieldNumber = 3;
     private string hostId_ = "";
+    /// <summary>
+    /// 房主ID
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string HostId {
@@ -2927,6 +3089,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "max_players" field.</summary>
     public const int MaxPlayersFieldNumber = 4;
     private int maxPlayers_;
+    /// <summary>
+    /// 最大人数
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int MaxPlayers {
@@ -2939,6 +3104,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "current_players" field.</summary>
     public const int CurrentPlayersFieldNumber = 5;
     private int currentPlayers_;
+    /// <summary>
+    /// 当前人数
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int CurrentPlayers {
@@ -2951,6 +3119,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "has_password" field.</summary>
     public const int HasPasswordFieldNumber = 6;
     private bool hasPassword_;
+    /// <summary>
+    /// 是否有密码
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public bool HasPassword {
@@ -2963,6 +3134,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "is_playing" field.</summary>
     public const int IsPlayingFieldNumber = 7;
     private bool isPlaying_;
+    /// <summary>
+    /// 是否正在游戏中
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public bool IsPlaying {
@@ -2977,6 +3151,9 @@ namespace GameNetwork {
     private static readonly pb::FieldCodec<global::GameNetwork.PlayerInfo> _repeated_players_codec
         = pb::FieldCodec.ForMessage(66, global::GameNetwork.PlayerInfo.Parser);
     private readonly pbc::RepeatedField<global::GameNetwork.PlayerInfo> players_ = new pbc::RepeatedField<global::GameNetwork.PlayerInfo>();
+    /// <summary>
+    /// 房间内玩家列表
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public pbc::RepeatedField<global::GameNetwork.PlayerInfo> Players {
@@ -3274,6 +3451,9 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 玩家信息
+  /// </summary>
   public sealed partial class PlayerInfo : pb::IMessage<PlayerInfo>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -3323,6 +3503,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "player_id" field.</summary>
     public const int PlayerIdFieldNumber = 1;
     private string playerId_ = "";
+    /// <summary>
+    /// 玩家唯一ID
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string PlayerId {
@@ -3335,6 +3518,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "player_name" field.</summary>
     public const int PlayerNameFieldNumber = 2;
     private string playerName_ = "";
+    /// <summary>
+    /// 玩家名称
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string PlayerName {
@@ -3347,6 +3533,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "is_ready" field.</summary>
     public const int IsReadyFieldNumber = 3;
     private bool isReady_;
+    /// <summary>
+    /// 是否准备
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public bool IsReady {
@@ -3537,6 +3726,9 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 开始游戏请求（房主发起）
+  /// </summary>
   public sealed partial class StartGameReq : pb::IMessage<StartGameReq>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -3689,232 +3881,9 @@ namespace GameNetwork {
 
   }
 
-  public sealed partial class LockstepSeat : pb::IMessage<LockstepSeat>
-  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
-      , pb::IBufferMessage
-  #endif
-  {
-    private static readonly pb::MessageParser<LockstepSeat> _parser = new pb::MessageParser<LockstepSeat>(() => new LockstepSeat());
-    private pb::UnknownFieldSet _unknownFields;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public static pb::MessageParser<LockstepSeat> Parser { get { return _parser; } }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public static pbr::MessageDescriptor Descriptor {
-      get { return global::GameNetwork.MessagesReflection.Descriptor.MessageTypes[15]; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    pbr::MessageDescriptor pb::IMessage.Descriptor {
-      get { return Descriptor; }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public LockstepSeat() {
-      OnConstruction();
-    }
-
-    partial void OnConstruction();
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public LockstepSeat(LockstepSeat other) : this() {
-      playerId_ = other.playerId_;
-      seat_ = other.seat_;
-      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public LockstepSeat Clone() {
-      return new LockstepSeat(this);
-    }
-
-    /// <summary>Field number for the "player_id" field.</summary>
-    public const int PlayerIdFieldNumber = 1;
-    private string playerId_ = "";
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public string PlayerId {
-      get { return playerId_; }
-      set {
-        playerId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
-      }
-    }
-
-    /// <summary>Field number for the "seat" field.</summary>
-    public const int SeatFieldNumber = 2;
-    private int seat_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int Seat {
-      get { return seat_; }
-      set {
-        seat_ = value;
-      }
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public override bool Equals(object other) {
-      return Equals(other as LockstepSeat);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public bool Equals(LockstepSeat other) {
-      if (ReferenceEquals(other, null)) {
-        return false;
-      }
-      if (ReferenceEquals(other, this)) {
-        return true;
-      }
-      if (PlayerId != other.PlayerId) return false;
-      if (Seat != other.Seat) return false;
-      return Equals(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public override int GetHashCode() {
-      int hash = 1;
-      if (PlayerId.Length != 0) hash ^= PlayerId.GetHashCode();
-      if (Seat != 0) hash ^= Seat.GetHashCode();
-      if (_unknownFields != null) {
-        hash ^= _unknownFields.GetHashCode();
-      }
-      return hash;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public override string ToString() {
-      return pb::JsonFormatter.ToDiagnosticString(this);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void WriteTo(pb::CodedOutputStream output) {
-    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
-      output.WriteRawMessage(this);
-    #else
-      if (PlayerId.Length != 0) {
-        output.WriteRawTag(10);
-        output.WriteString(PlayerId);
-      }
-      if (Seat != 0) {
-        output.WriteRawTag(16);
-        output.WriteInt32(Seat);
-      }
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(output);
-      }
-    #endif
-    }
-
-    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-      if (PlayerId.Length != 0) {
-        output.WriteRawTag(10);
-        output.WriteString(PlayerId);
-      }
-      if (Seat != 0) {
-        output.WriteRawTag(16);
-        output.WriteInt32(Seat);
-      }
-      if (_unknownFields != null) {
-        _unknownFields.WriteTo(ref output);
-      }
-    }
-    #endif
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int CalculateSize() {
-      int size = 0;
-      if (PlayerId.Length != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeStringSize(PlayerId);
-      }
-      if (Seat != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Seat);
-      }
-      if (_unknownFields != null) {
-        size += _unknownFields.CalculateSize();
-      }
-      return size;
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void MergeFrom(LockstepSeat other) {
-      if (other == null) {
-        return;
-      }
-      if (other.PlayerId.Length != 0) {
-        PlayerId = other.PlayerId;
-      }
-      if (other.Seat != 0) {
-        Seat = other.Seat;
-      }
-      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public void MergeFrom(pb::CodedInputStream input) {
-    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
-      input.ReadRawMessage(this);
-    #else
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
-            break;
-          case 10: {
-            PlayerId = input.ReadString();
-            break;
-          }
-          case 16: {
-            Seat = input.ReadInt32();
-            break;
-          }
-        }
-      }
-    #endif
-    }
-
-    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
-      uint tag;
-      while ((tag = input.ReadTag()) != 0) {
-        switch(tag) {
-          default:
-            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
-            break;
-          case 10: {
-            PlayerId = input.ReadString();
-            break;
-          }
-          case 16: {
-            Seat = input.ReadInt32();
-            break;
-          }
-        }
-      }
-    }
-    #endif
-
-  }
-
+  /// <summary>
+  /// 游戏开始通知
+  /// </summary>
   public sealed partial class GameStartNotify : pb::IMessage<GameStartNotify>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -3929,7 +3898,7 @@ namespace GameNetwork {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::GameNetwork.MessagesReflection.Descriptor.MessageTypes[16]; }
+      get { return global::GameNetwork.MessagesReflection.Descriptor.MessageTypes[15]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3966,6 +3935,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "room_id" field.</summary>
     public const int RoomIdFieldNumber = 1;
     private string roomId_ = "";
+    /// <summary>
+    /// 房间ID
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string RoomId {
@@ -3978,6 +3950,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "start_time" field.</summary>
     public const int StartTimeFieldNumber = 2;
     private long startTime_;
+    /// <summary>
+    /// 开始时间戳
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public long StartTime {
@@ -3990,6 +3965,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "lockstep_seed" field.</summary>
     public const int LockstepSeedFieldNumber = 3;
     private ulong lockstepSeed_;
+    /// <summary>
+    /// ===== lockstep 初始化 =====
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public ulong LockstepSeed {
@@ -4002,6 +3980,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "tick_rate" field.</summary>
     public const int TickRateFieldNumber = 4;
     private int tickRate_;
+    /// <summary>
+    /// 逻辑帧率（客户端校验不一致则拒进，防配置漂移）
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int TickRate {
@@ -4016,6 +3997,9 @@ namespace GameNetwork {
     private static readonly pb::FieldCodec<global::GameNetwork.LockstepSeat> _repeated_seats_codec
         = pb::FieldCodec.ForMessage(42, global::GameNetwork.LockstepSeat.Parser);
     private readonly pbc::RepeatedField<global::GameNetwork.LockstepSeat> seats_ = new pbc::RepeatedField<global::GameNetwork.LockstepSeat>();
+    /// <summary>
+    /// 座位表：string玩家ID → int座位号（逻辑世界PlayerId）
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public pbc::RepeatedField<global::GameNetwork.LockstepSeat> Seats {
@@ -4241,6 +4225,244 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 座位分配（GameStartNotify 携带，按加入顺序编号 0..N-1）
+  /// </summary>
+  public sealed partial class LockstepSeat : pb::IMessage<LockstepSeat>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<LockstepSeat> _parser = new pb::MessageParser<LockstepSeat>(() => new LockstepSeat());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<LockstepSeat> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::GameNetwork.MessagesReflection.Descriptor.MessageTypes[16]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public LockstepSeat() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public LockstepSeat(LockstepSeat other) : this() {
+      playerId_ = other.playerId_;
+      seat_ = other.seat_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public LockstepSeat Clone() {
+      return new LockstepSeat(this);
+    }
+
+    /// <summary>Field number for the "player_id" field.</summary>
+    public const int PlayerIdFieldNumber = 1;
+    private string playerId_ = "";
+    /// <summary>
+    /// 服务器玩家ID（登录/房间链路的 string ID）
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string PlayerId {
+      get { return playerId_; }
+      set {
+        playerId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "seat" field.</summary>
+    public const int SeatFieldNumber = 2;
+    private int seat_;
+    /// <summary>
+    /// 逻辑世界座位号
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Seat {
+      get { return seat_; }
+      set {
+        seat_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as LockstepSeat);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(LockstepSeat other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (PlayerId != other.PlayerId) return false;
+      if (Seat != other.Seat) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (PlayerId.Length != 0) hash ^= PlayerId.GetHashCode();
+      if (Seat != 0) hash ^= Seat.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (PlayerId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(PlayerId);
+      }
+      if (Seat != 0) {
+        output.WriteRawTag(16);
+        output.WriteInt32(Seat);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (PlayerId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(PlayerId);
+      }
+      if (Seat != 0) {
+        output.WriteRawTag(16);
+        output.WriteInt32(Seat);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (PlayerId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(PlayerId);
+      }
+      if (Seat != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Seat);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(LockstepSeat other) {
+      if (other == null) {
+        return;
+      }
+      if (other.PlayerId.Length != 0) {
+        PlayerId = other.PlayerId;
+      }
+      if (other.Seat != 0) {
+        Seat = other.Seat;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            PlayerId = input.ReadString();
+            break;
+          }
+          case 16: {
+            Seat = input.ReadInt32();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            PlayerId = input.ReadString();
+            break;
+          }
+          case 16: {
+            Seat = input.ReadInt32();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  /// <summary>
+  /// 游戏结束通知
+  /// </summary>
   public sealed partial class GameOverNotify : pb::IMessage<GameOverNotify>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -4290,6 +4512,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "room_id" field.</summary>
     public const int RoomIdFieldNumber = 1;
     private string roomId_ = "";
+    /// <summary>
+    /// 房间ID
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string RoomId {
@@ -4302,6 +4527,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "winner_id" field.</summary>
     public const int WinnerIdFieldNumber = 2;
     private string winnerId_ = "";
+    /// <summary>
+    /// 获胜者/队伍（可扩展）
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string WinnerId {
@@ -4314,6 +4542,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "reason" field.</summary>
     public const int ReasonFieldNumber = 3;
     private int reason_;
+    /// <summary>
+    /// 结束原因
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int Reason {
@@ -4504,6 +4735,9 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 登录请求（客户端发送）
+  /// </summary>
   public sealed partial class LoginReq : pb::IMessage<LoginReq>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -4552,6 +4786,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "username" field.</summary>
     public const int UsernameFieldNumber = 1;
     private string username_ = "";
+    /// <summary>
+    /// 用户名
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string Username {
@@ -4564,6 +4801,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "password" field.</summary>
     public const int PasswordFieldNumber = 2;
     private string password_ = "";
+    /// <summary>
+    /// 密码（明文，服务端会进行MD5哈希验证）
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string Password {
@@ -4730,6 +4970,9 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 登录响应（服务端返回）
+  /// </summary>
   public sealed partial class LoginResp : pb::IMessage<LoginResp>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -4782,6 +5025,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "success" field.</summary>
     public const int SuccessFieldNumber = 1;
     private bool success_;
+    /// <summary>
+    /// 是否成功
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public bool Success {
@@ -4794,6 +5040,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "user_id" field.</summary>
     public const int UserIdFieldNumber = 2;
     private string userId_ = "";
+    /// <summary>
+    /// 用户唯一ID（关键！客户端保存此字段用于后续操作）
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string UserId {
@@ -4806,6 +5055,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "username" field.</summary>
     public const int UsernameFieldNumber = 3;
     private string username_ = "";
+    /// <summary>
+    /// 显示名称/昵称
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string Username {
@@ -4818,6 +5070,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "token" field.</summary>
     public const int TokenFieldNumber = 4;
     private string token_ = "";
+    /// <summary>
+    /// 会话令牌（后续请求携带用于身份验证）
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string Token {
@@ -4830,6 +5085,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "expire_time" field.</summary>
     public const int ExpireTimeFieldNumber = 5;
     private long expireTime_;
+    /// <summary>
+    /// 令牌过期时间戳（Unix时间戳毫秒）
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public long ExpireTime {
@@ -4842,6 +5100,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "message" field.</summary>
     public const int MessageFieldNumber = 6;
     private string message_ = "";
+    /// <summary>
+    /// 错误信息（失败时返回）
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public string Message {
@@ -5105,7 +5366,7 @@ namespace GameNetwork {
   }
 
   /// <summary>
-  /// lockstep 指令：网上只传整数指令，位置/血量/开火结果全部由各端确定性模拟生成
+  /// 单条玩家指令（字段与 GameLockstep.PlayerCommand 一一对应，全部整数）
   /// </summary>
   public sealed partial class LockstepCommandData : pb::IMessage<LockstepCommandData>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
@@ -5158,6 +5419,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "frame" field.</summary>
     public const int FrameFieldNumber = 1;
     private long frame_;
+    /// <summary>
+    /// 生效帧号（= 产生帧 + INPUT_DELAY_FRAMES）
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public long Frame {
@@ -5170,6 +5434,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "move_x" field.</summary>
     public const int MoveXFieldNumber = 2;
     private int moveX_;
+    /// <summary>
+    /// 世界空间移动轴 -127..127
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int MoveX {
@@ -5182,6 +5449,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "move_z" field.</summary>
     public const int MoveZFieldNumber = 3;
     private int moveZ_;
+    /// <summary>
+    /// 世界空间移动轴 -127..127
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int MoveZ {
@@ -5194,6 +5464,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "aim_angle" field.</summary>
     public const int AimAngleFieldNumber = 4;
     private int aimAngle_;
+    /// <summary>
+    /// 瞄准/朝向环绕角 0..65535
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int AimAngle {
@@ -5206,6 +5479,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "buttons" field.</summary>
     public const int ButtonsFieldNumber = 5;
     private uint buttons_;
+    /// <summary>
+    /// 按键位域 bit0=FIRE bit1=SPRINT bit2=RELOAD bit3=JUMP
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public uint Buttons {
@@ -5444,6 +5720,9 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 指令上报（客户端按发送节流批量携带未来几帧的指令；服务器只中继不解读）
+  /// </summary>
   public sealed partial class LockstepCommandReq : pb::IMessage<LockstepCommandReq>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -5622,6 +5901,9 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 封帧内的单条指令（带座位号标识归属）
+  /// </summary>
   public sealed partial class LockstepPlayerCommand : pb::IMessage<LockstepPlayerCommand>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -5673,6 +5955,9 @@ namespace GameNetwork {
     /// <summary>Field number for the "seat" field.</summary>
     public const int SeatFieldNumber = 1;
     private int seat_;
+    /// <summary>
+    /// 座位号（GameStartNotify 分配）
+    /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int Seat {
@@ -5959,6 +6244,9 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 一帧的封帧结果（该帧全员指令表）
+  /// </summary>
   public sealed partial class LockstepFrameInputs : pb::IMessage<LockstepFrameInputs>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage
@@ -6174,6 +6462,10 @@ namespace GameNetwork {
 
   }
 
+  /// <summary>
+  /// 封帧广播（服务器收齐一帧全员指令后打包；UDP 下可多帧合包、可乱序到达，
+  /// 客户端 LockstepClient.OnAuthoritativeInputs 已容忍乱序/重复）
+  /// </summary>
   public sealed partial class LockstepInputsNotify : pb::IMessage<LockstepInputsNotify>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       , pb::IBufferMessage

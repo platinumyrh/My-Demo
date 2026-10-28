@@ -16,27 +16,17 @@
   - `Gameplay/Input`
 - 协议只保留心跳、房间、登录、游戏控制和 lockstep 指令消息
 
-## 服务端
+## 服务端（已完成）
 
-由于当前执行环境对 `E:\unity\Server_MyDemo` 没有写权限，服务端修改以补丁和完整包形式保存在这里：
+服务端已按 lockstep-only 方案重构：
 
-- `server_lockstep_only.patch`
-- `server_lockstep_only.zip`
+- 删除 `Utils/FrameSyncManager.cs`、`Utils/VehicleConfigStore.cs` 及旧状态同步/战斗事件消息
+- 新增 `Network/MessageRouter.cs`：泛型注册 parser，统一分发与异常兜底
+- 消息处理按领域拆分到 `Handlers/`：`LoginHandler`、`HeartbeatHandler`、`RoomHandler`、`LockstepHandler`
+- `GameServer` 只负责组装、生命周期、心跳超时扫描和跨模块广播/断线处理
+- `LockstepRelayManager` 移动到 `Services/`
+- 目录结构：`Network/`、`Handlers/`、`Services/`、`Models/`、`Lockstep/`
+- 协议只保留心跳、房间、登录、游戏控制和 lockstep 指令消息
+- `Player` / `Room` 模型移除旧位置、血量等状态字段
 
-应用补丁：
-
-```cmd
-cd /d "E:\unity\Server_MyDemo"
-git apply "E:\unity\My Demo\Docs\LockstepRefactor\server_lockstep_only.patch"
-```
-
-或者解压 `server_lockstep_only.zip`，用其中的 `Server_MyDemo` 目录覆盖当前服务端。
-
-服务端变更：
-
-- 删除旧 `Utils/FrameSyncManager.cs`
-- 删除 `VehicleConfigStore.cs`
-- `LockstepRelayManager.cs` 移到 `Server/Lockstep/`
-- `GameServer` 只保留 lockstep 指令中继和封帧广播
-- 协议只保留 lockstep 指令消息
-- `Player` 模型移除旧位置/血量等状态字段
+`server_lockstep_only.patch` / `.zip` 为当时的交付存档，改动已直接应用，无需再次执行。

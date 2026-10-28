@@ -3,142 +3,233 @@
 package GameNetwork;
 
 // ============================================
-// 消息ID枚举：只保留房间/登录/游戏控制/lockstep
+// 消息ID枚举（用于标识消息类型）
 // ============================================
 enum MsgID {
-    MSG_NONE = 0;
+    MSG_NONE = 0;              // 无效消息
+    
+    // === 心跳相关 (1-9) ===
+    C2S_HeartBeat = 1;         // 客户端 → 服务端：心跳请求
+    S2C_HeartBeat = 2;         // 服务端 → 客户端：心跳响应
+    
+    // === 房间管理 (10-29) ===
+    C2S_CreateRoom = 10;       // 客户端 → 服务端：创建房间
+    S2C_CreateRoom = 11;       // 服务端 → 客户端：创建房间结果
+    C2S_JoinRoom = 12;         // 客户端 → 服务端：加入房间
+    S2C_JoinRoom = 13;         // 服务端 → 客户端：加入房间结果
+    C2S_LeaveRoom = 14;        // 客户端 → 服务端：离开房间
+    S2C_LeaveRoom = 15;        // 服务端 → 客户端：离开房间结果
+    C2S_GetRoomList = 16;      // 客户端 → 服务端：获取房间列表
+    S2C_RoomList = 17;         // 服务端 → 客户端：房间列表
+    S2C_PlayerJoin = 18;       // 服务端 → 客户端广播：有玩家加入
+    S2C_PlayerLeave = 19;      // 服务端 → 客户端广播：有玩家离开
+    C2S_StartGame = 20;        // 客户端 → 服务端：房主开始游戏
+    
+    // === 游戏事件 (50-69) ===
+    S2C_GameStart = 50;        // 服务端 → 客户端：游戏开始
+    S2C_GameOver = 51;         // 服务端 → 客户端：游戏结束
+    
+    // === 登录认证 (70-79) ===
+    C2S_Login = 70;            // 客户端 → 服务端：登录请求
+    S2C_Login = 71;            // 服务端 → 客户端：登录响应
 
-    // === 心跳 ===
-    C2S_HeartBeat = 1;
-    S2C_HeartBeat = 2;
-
-    // === 房间管理 ===
-    C2S_CreateRoom = 10;
-    S2C_CreateRoom = 11;
-    C2S_JoinRoom = 12;
-    S2C_JoinRoom = 13;
-    C2S_LeaveRoom = 14;
-    S2C_LeaveRoom = 15;
-    C2S_GetRoomList = 16;
-    S2C_RoomList = 17;
-    S2C_PlayerJoin = 18;
-    S2C_PlayerLeave = 19;
-    C2S_StartGame = 20;
-
-    // === 游戏控制 ===
-    S2C_GameStart = 50;
-    S2C_GameOver = 51;
-
-    // === 登录认证 ===
-    C2S_Login = 70;
-    S2C_Login = 71;
-
-    // === lockstep 帧同步 ===
-    C2S_LockstepCommand = 90;
-    S2C_LockstepInputs = 91;
+    // === lockstep 帧同步 (90-99) ===
+    C2S_LockstepCommand = 90;  // 客户端 → 服务端：本地指令批量上报（未来几帧）
+    S2C_LockstepInputs = 91;   // 服务端 → 客户端：封帧后的全员指令广播（可多帧合包）
 }
 
-message HeartBeatReq { int64 timestamp = 1; }
-message HeartBeatResp { int64 server_time = 1; int64 client_time = 2; }
+// ============================================
+// 心跳消息
+// ============================================
 
+// 心跳请求（客户端发送）
+message HeartBeatReq {
+    int64 timestamp = 1;        // 客户端时间戳
+}
+
+// 心跳响应（服务端返回）
+message HeartBeatResp {
+    int64 server_time = 1;      // 服务器时间戳
+    int64 client_time = 2;      // 回显客户端时间戳（用于计算延迟）
+}
+
+// ============================================
+// 房间管理消息
+// ============================================
+
+// 创建房间请求
 message CreateRoomReq {
-    string room_name = 1;
-    string password = 2;
-    string room_id = 3;
+    string room_name = 1;        // 房间名称（可选）
+    string password = 2;         // 密码（可选，空则无密码）
+    string room_id = 3;          // 房间ID（可选，空则服务端自动生成）
 }
+
+// 创建房间响应
 message CreateRoomResp {
-    bool success = 1;
-    string room_id = 2;
-    string message = 3;
-    string player_id = 4;
+    bool success = 1;            // 是否成功
+    string room_id = 2;          // 房间ID（成功时返回）
+    string message = 3;          // 错误信息（失败时返回）
+    string player_id = 4;        // 本玩家的ID（服务端分配，用于帧同步对齐）
 }
+
+// 加入房间请求
 message JoinRoomReq {
-    string room_id = 1;
-    string password = 2;
+    string room_id = 1;          // 房间ID
+    string password = 2;         // 密码（如果有）
 }
+
+// 加入房间响应
 message JoinRoomResp {
-    bool success = 1;
-    string room_id = 2;
-    RoomInfo room_info = 3;
-    string message = 4;
-    string player_id = 5;
+    bool success = 1;            // 是否成功
+    string room_id = 2;          // 房间ID
+    RoomInfo room_info = 3;      // 房间信息（成功时返回）
+    string message = 4;          // 错误信息
+    string player_id = 5;        // 本玩家的ID（服务端分配，用于帧同步对齐）
 }
-message LeaveRoomReq { string room_id = 1; }
-message LeaveRoomResp { bool success = 1; string message = 2; }
-message GetRoomListReq {}
-message RoomListResp { repeated RoomInfo rooms = 1; }
-message PlayerJoinNotify { PlayerInfo player = 1; }
-message PlayerLeaveNotify { string player_id = 1; }
 
+// 离开房间请求
+message LeaveRoomReq {
+    string room_id = 1;          // 房间ID
+}
+
+// 离开房间响应
+message LeaveRoomResp {
+    bool success = 1;            // 是否成功
+    string message = 2;          // 信息
+}
+
+// 获取房间列表请求
+message GetRoomListReq {
+    // 无需参数，可扩展分页等
+}
+
+// 房间列表响应
+message RoomListResp {
+    repeated RoomInfo rooms = 1; // 房间列表
+}
+
+// 玩家加入广播（通知房间内其他玩家）
+message PlayerJoinNotify {
+    PlayerInfo player = 1;       // 加入的玩家信息
+}
+
+// 玩家离开广播
+message PlayerLeaveNotify {
+    string player_id = 1;        // 离开的玩家ID
+}
+
+// ============================================
+// 数据结构定义
+// ============================================
+
+// 房间信息
 message RoomInfo {
-    string room_id = 1;
-    string room_name = 2;
-    string host_id = 3;
-    int32 max_players = 4;
-    int32 current_players = 5;
-    bool has_password = 6;
-    bool is_playing = 7;
-    repeated PlayerInfo players = 8;
+    string room_id = 1;          // 房间唯一ID
+    string room_name = 2;        // 房间名称
+    string host_id = 3;          // 房主ID
+    int32 max_players = 4;       // 最大人数
+    int32 current_players = 5;   // 当前人数
+    bool has_password = 6;       // 是否有密码
+    bool is_playing = 7;         // 是否正在游戏中
+    repeated PlayerInfo players = 8; // 房间内玩家列表
 }
+
+// 玩家信息
 message PlayerInfo {
-    string player_id = 1;
-    string player_name = 2;
-    bool is_ready = 3;
+    string player_id = 1;        // 玩家唯一ID
+    string player_name = 2;      // 玩家名称
+    bool is_ready = 3;           // 是否准备
 }
 
-message StartGameReq {}
-message LockstepSeat {
-    string player_id = 1;
-    int32 seat = 2;
+// ============================================
+// 游戏控制消息
+// ============================================
+
+// 开始游戏请求（房主发起）
+message StartGameReq {
+    // 无需参数，服务端根据玩家定位其所在房间
 }
+
+// 游戏开始通知
 message GameStartNotify {
-    string room_id = 1;
-    int64 start_time = 2;
-    uint64 lockstep_seed = 3;
-    int32 tick_rate = 4;
-    repeated LockstepSeat seats = 5;
+    string room_id = 1;          // 房间ID
+    int64 start_time = 2;        // 开始时间戳
+
+    // ===== lockstep 初始化 =====
+    uint64 lockstep_seed = 3;    // 逻辑世界 RNG 种子（全端一致）
+    int32 tick_rate = 4;         // 逻辑帧率（客户端校验不一致则拒进，防配置漂移）
+    repeated LockstepSeat seats = 5; // 座位表：string玩家ID → int座位号（逻辑世界PlayerId）
 }
+
+// 座位分配（GameStartNotify 携带，按加入顺序编号 0..N-1）
+message LockstepSeat {
+    string player_id = 1;        // 服务器玩家ID（登录/房间链路的 string ID）
+    int32 seat = 2;              // 逻辑世界座位号
+}
+
+// 游戏结束通知
 message GameOverNotify {
-    string room_id = 1;
-    string winner_id = 2;
-    int32 reason = 3;
+    string room_id = 1;          // 房间ID
+    string winner_id = 2;        // 获胜者/队伍（可扩展）
+    int32 reason = 3;            // 结束原因
 }
 
+// ============================================
+// 登录认证消息
+// ============================================
+
+// 登录请求（客户端发送）
 message LoginReq {
-    string username = 1;
-    string password = 2;
-}
-message LoginResp {
-    bool success = 1;
-    string user_id = 2;
-    string username = 3;
-    string token = 4;
-    int64 expire_time = 5;
-    string message = 6;
+    string username = 1;         // 用户名
+    string password = 2;         // 密码（明文，服务端会进行MD5哈希验证）
 }
 
-// lockstep 指令：网上只传整数指令，位置/血量/开火结果全部由各端确定性模拟生成
-message LockstepCommandData {
-    int64 frame = 1;
-    int32 move_x = 2;
-    int32 move_z = 3;
-    int32 aim_angle = 4;
-    uint32 buttons = 5;
+// 登录响应（服务端返回）
+message LoginResp {
+    bool success = 1;            // 是否成功
+    string user_id = 2;          // 用户唯一ID（关键！客户端保存此字段用于后续操作）
+    string username = 3;          // 显示名称/昵称
+    string token = 4;            // 会话令牌（后续请求携带用于身份验证）
+    int64 expire_time = 5;       // 令牌过期时间戳（Unix时间戳毫秒）
+    string message = 6;          // 错误信息（失败时返回）
 }
+
+// ============================================
+// lockstep 帧同步
+// 网上只传量化指令——位置/血量/开火结果全部由各端确定性模拟本地生成
+// ============================================
+
+// 单条玩家指令（字段与 GameLockstep.PlayerCommand 一一对应，全部整数）
+message LockstepCommandData {
+    int64 frame = 1;             // 生效帧号（= 产生帧 + INPUT_DELAY_FRAMES）
+    int32 move_x = 2;            // 世界空间移动轴 -127..127
+    int32 move_z = 3;            // 世界空间移动轴 -127..127
+    int32 aim_angle = 4;         // 瞄准/朝向环绕角 0..65535
+    uint32 buttons = 5;          // 按键位域 bit0=FIRE bit1=SPRINT bit2=RELOAD bit3=JUMP
+}
+
+// 指令上报（客户端按发送节流批量携带未来几帧的指令；服务器只中继不解读）
 message LockstepCommandReq {
     repeated LockstepCommandData commands = 1;
 }
+
+// 封帧内的单条指令（带座位号标识归属）
 message LockstepPlayerCommand {
-    int32 seat = 1;
+    int32 seat = 1;              // 座位号（GameStartNotify 分配）
     int32 move_x = 2;
     int32 move_z = 3;
     int32 aim_angle = 4;
     uint32 buttons = 5;
 }
+
+// 一帧的封帧结果（该帧全员指令表）
 message LockstepFrameInputs {
     int64 frame = 1;
     repeated LockstepPlayerCommand commands = 2;
 }
+
+// 封帧广播（服务器收齐一帧全员指令后打包；UDP 下可多帧合包、可乱序到达，
+// 客户端 LockstepClient.OnAuthoritativeInputs 已容忍乱序/重复）
 message LockstepInputsNotify {
     repeated LockstepFrameInputs frames = 1;
 }
