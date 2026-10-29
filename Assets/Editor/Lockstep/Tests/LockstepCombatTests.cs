@@ -60,26 +60,26 @@ public static class LockstepCombatTests
         Check("反向 miss", b3.Hp == 100 && foundMiss && miss3.TargetId == 0
               && Mathf.Abs(miss3.HitZ.ToFloat() + 50f) < 0.01f, $"b.hp={b3.Hp}");
 
-        // ===== 射程外 miss：B 在 60m，射程 50m =====
+        // ===== 射程外 miss：A 朝 -Z，B 在 60m（往无墙方向打，只测射程）=====
         var w4 = new LogicWorld(1);
-        w4.AddPlayer(1, new FP(0), new FP(0), 0, 100);
-        var b4 = w4.AddPlayer(2, new FP(0), FP.FromInt(60), 0, 100);
-        w4.Tick(new Dictionary<int, PlayerCommand> { { 1, fire } });
+        w4.AddPlayer(1, new FP(0), new FP(0), FPAngle.FromDegrees(180), 100);
+        var b4 = w4.AddPlayer(2, new FP(0), FP.FromInt(-60), 0, 100);
+        w4.Tick(new Dictionary<int, PlayerCommand> { { 1, fireBack } });
         Check("射程外 miss", b4.Hp == 100);
 
-        // ===== 最近目标优先：B1(0,5) B2(0,10) → B1 中弹 =====
+        // ===== 最近目标优先：B1(0,3) B2(0,5) → B1 中弹 =====
         var w5 = new LogicWorld(1);
         w5.AddPlayer(1, new FP(0), new FP(0), 0, 100);
-        var b5a = w5.AddPlayer(2, new FP(0), FP.FromInt(5), 0, 100);
-        var b5b = w5.AddPlayer(3, new FP(0), FP.FromInt(10), 0, 100);
+        var b5a = w5.AddPlayer(2, new FP(0), FP.FromInt(3), 0, 100);
+        var b5b = w5.AddPlayer(3, new FP(0), FP.FromInt(5), 0, 100);
         w5.Tick(new Dictionary<int, PlayerCommand> { { 1, fire } });
         Check("最近目标优先", b5a.Hp == 90 && b5b.Hp == 100, $"b2={b5a.Hp} b3={b5b.Hp}");
 
-        // ===== 击杀与穿透：10枪杀死B，死后不挡弹，同一射线打到其后的C =====
+        // ===== 击杀与穿透：10枪杀死B(0,3)，死后不挡弹，同一射线打到其后的C(0,5) =====
         var w6 = new LogicWorld(1);
         var a6 = w6.AddPlayer(1, new FP(0), new FP(0), 0, 100);
-        var b6 = w6.AddPlayer(2, new FP(0), FP.FromInt(5), 0, 100);
-        var c6 = w6.AddPlayer(3, new FP(0), FP.FromInt(8), 0, 100);
+        var b6 = w6.AddPlayer(2, new FP(0), FP.FromInt(3), 0, 100);
+        var c6 = w6.AddPlayer(3, new FP(0), FP.FromInt(5), 0, 100);
         bool sawDied = false;
         for (int i = 0; i < 10; i++)
         {

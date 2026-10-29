@@ -23,6 +23,9 @@ public class LockstepGameDriver : MonoBehaviour
     private LockstepClient _client;
     private LogicWorld World => _client?.World;
 
+    // 单机模式：没有服务器，由本地封帧器回喂权威帧
+    private OfflineLockstepRelay _offlineRelay;
+
     private string _localPlayerId = "";
     private int _localSeat = -1;
     private readonly Dictionary<int, string> _seatToPlayerId = new();
@@ -50,11 +53,13 @@ public class LockstepGameDriver : MonoBehaviour
     private static bool _hasPendingSession;
     private static ulong _pendingSeed;
     private static int _pendingTickRate;
+    private static long _pendingStartMs;
     private static List<KeyValuePair<string, int>> _pendingSeats;
 
     private readonly Diagnostics.Stopwatch _clock = new Diagnostics.Stopwatch();
     private double _accumulatorMs;
     private long _nextWallTick;                 // 下一个要推进到的墙钟帧号（1起）
+    private long _serverStartMs;                // 联机开赛时刻（服务器墙钟）；0 = 单机自由时钟
     private long _lastConsumedEventFrame;       // 事件去重闸门（回滚重演的旧帧不再消费）
 
     // 输入采样（渲染帧刷新，逻辑帧消费）
@@ -70,9 +75,10 @@ public class LockstepGameDriver : MonoBehaviour
 
     /// <summary>
     /// 开局入口（NetworkHandler.OnGameStart 调用）。
-    /// 种子为 0 或座位表为空 = 服务器未提供 lockstep 初始化数据 → 不启动
+    /// 种子为 0 或座位表为空 = 服务器未提供 lockstep 初始化数据 → 不启动。
+    /// serverStartMs = 服务器约定的开赛时刻（全端同一时间轴；0 = 单机，不等）
     /// </summary>
-    public static void BeginSession(ulong seed, int tickRate, IReadOnlyList<KeyValuePair<string, int>> seats)
+    public static void BeginSession(ulong seed, int tickRate, IReadOnlyList<KeyValuePair<string, int>> seats, long serverStartMs = 0)
     {
         if (seed == 0 || seats == null || seats.Count == 0)
         {
@@ -87,6 +93,7 @@ public class LockstepGameDriver : MonoBehaviour
 
         _pendingSeed = seed;
         _pendingTickRate = tickRate;
+        _pendingStartMs = serverStartMs;
         _pendingSeats = new List<KeyValuePair<string, int>>(seats);
         _hasPendingSession = true;
         TryStartPendingSession();
@@ -101,12 +108,13 @@ public class LockstepGameDriver : MonoBehaviour
         _hasPendingSession = false;
         var go = new GameObject("LockstepGameDriver");
         var driver = go.AddComponent<LockstepGameDriver>();
-        driver.InitSession(_pendingSeed, _pendingSeats);
+        driver.InitSession(_pendingSeed, _pendingSeats, _pendingStartMs);
     }
 
-    private void InitSession(ulong seed, IReadOnlyList<KeyValuePair<string, int>> seats)
+    private void InitSession(ulong seed, IReadOnlyList<KeyValuePair<string, int>> seats, long serverStartMs)
     {
         Instance = this;
+        _serverStartMs = serverStartMs;
         _localPlayerId = NetworkManager.Instance != null ? NetworkManager.Instance.GetLocalPlayerId() : "";
 
         // 座位表：string 玩家ID ↔ int 座位号
@@ -131,11 +139,27 @@ public class LockstepGameDriver : MonoBehaviour
         }
         _client = new LockstepClient(_localSeat, world);
 
+        if (OfflinePlaySession.IsActive)
+        {
+            var seatIds = new List<int>(seats.Count);
+            foreach (var kv in seats) seatIds.Add(kv.Value);
+            _offlineRelay = new OfflineLockstepRelay(seatIds);
+        }
+
         BuildViews();
         LockstepNetEvents.FrameInputsReceived += OnFrameInputs;
 
         _clock.Start();
-        Debug.Log($"[LockstepDriver] ✅ 会话启动：座位{_localSeat}/{seats.Count}，种子{seed}，逻辑帧率{LockstepConfig.TICK_RATE}Hz");
+
+        if (_serverStartMs > 0)
+        {
+            long lateMs = System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - _serverStartMs;
+            if (lateMs > LockstepConfig.TICK_MS * 2)
+                Debug.LogWarning($"[LockstepDriver] ⚠️ 比开赛时刻晚 {lateMs}ms 才建好会话，早封的权威帧不会重发，帧号会断档");
+        }
+
+        Debug.Log($"[LockstepDriver] ✅ 会话启动：座位{_localSeat}/{seats.Count}，种子{seed}，逻辑帧率{LockstepConfig.TICK_RATE}Hz" +
+                  (_serverStartMs > 0 ? $"，等待统一开赛时刻 {_serverStartMs}" : "，单机模式不等开赛"));
     }
 
     /// <summary>建立座位 → 场景玩家对象的视图映射</summary>
@@ -223,6 +247,15 @@ public class LockstepGameDriver : MonoBehaviour
 
         SampleInput();//读取输入为全局位置相关变量赋值
 
+        // 联机：全端等同一个开赛时刻再起表，帧号从 1 开始（服务器的封帧时钟也从这一刻起算）。
+        // 提前推进会让各端帧号错位，服务器会把我们的指令当迟到包丢弃
+        if (_serverStartMs > 0 &&
+            System.DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() < _serverStartMs)
+        {
+            RenderFrame(1f);
+            return;
+        }
+
         // 固定步长推进（渲染帧率与逻辑帧率解耦）
         _accumulatorMs += Time.deltaTime * 1000.0;
         int guard = 0;
@@ -306,10 +339,16 @@ public class LockstepGameDriver : MonoBehaviour
         _reloadSticky = false;
 
         _client.SubmitLocalCommand(wall + LockstepConfig.INPUT_DELAY_FRAMES, cmd);
+        
 
-        // 2. 待发指令 → 服务器
+        // 2. 待发指令 → 服务器（单机模式改为本地封帧后直接回喂）
         var pending = _client.DrainPendingSends();
-        if (pending.Count > 0 && NetworkManager.Instance != null && NetworkManager.Instance.IsConnected)
+        if (_offlineRelay != null)
+        {
+            _offlineRelay.Submit(pending, _localSeat);
+            _offlineRelay.SealUpTo(wall, _client.OnAuthoritativeInputs);
+        }
+        else if (pending.Count > 0 && NetworkManager.Instance != null && NetworkManager.Instance.IsConnected)
         {
             NetworkManager.Instance.Send(MsgID.C2SLockstepCommand, LockstepProtoConvert.ToCommandReq(pending));
         }
@@ -480,13 +519,21 @@ public class LockstepGameDriver : MonoBehaviour
         Vector3 dir = end - origin;
         if (dir.sqrMagnitude < 0.0001f) dir = view.Transform.forward;
         dir.Normalize();
-        // 逻辑世界没有表面法线，弹孔朝向用 -dir 兜底（面向射手）
-        Vector3 normal = ev.TargetId != 0 ? -dir : Vector3.up;
+
+        // 墙面法线由逻辑层给出；打中玩家时没有受击法线，用 -dir 兜底（面向射手）
+        Vector3 normal;
+        if (ev.HitWall) normal = new Vector3(ev.HitNX.ToFloat(), 0f, ev.HitNZ.ToFloat());
+        else if (ev.TargetId != 0) normal = -dir;
+        else normal = Vector3.up;
+        // 斜墙的法线是带小数的定点单位向量，这里再归一一次，弹孔贴面才不会歪
+        if (normal.sqrMagnitude > 0.0001f) normal.Normalize();
+
+        bool hitSomething = ev.TargetId != 0 || ev.HitWall;
 
         if (view.IsLocal)
         {
             if (view.Weapon != null)
-                view.Weapon.PlayFireVisual(origin, dir, end, ev.TargetId != 0, normal);
+                view.Weapon.PlayFireVisual(origin, dir, end, hitSomething, normal);
             view.Anim?.PlayFire();
             _cameraFollow ??= FindObjectOfType<CameraFollow>();
             _cameraFollow?.NotifyFired(new WeaponController.ShotInfo
@@ -500,7 +547,7 @@ public class LockstepGameDriver : MonoBehaviour
         else
         {
             // 远端表现：只播弹道/枪口/弹孔/开火动画，不参与命中判定
-            view.Player?.PlayFireVisual(origin, dir, end, ev.TargetId != 0, normal);
+            view.Player?.PlayFireVisual(origin, dir, end, hitSomething, normal);
         }
     }
 

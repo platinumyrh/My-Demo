@@ -147,7 +147,7 @@ Transform:
   m_GameObject: {fileID: 287679055}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: -0.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -667,11 +667,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb054c9801f2b2a4c869c256dfbf1517, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  target: {fileID: 0}
-  followSmoothTime: 0.08
-  viewGroundOffset: {x: 0, y: 6}
-  fireFeedbackEnabled: 1
-  findRetryInterval: 0.5
 --- !u!1 &987550577
 GameObject:
   m_ObjectHideFlags: 0
@@ -851,13 +846,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2034709811}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
-  m_LocalPosition: {x: -1.0875, y: 2.26, z: 7.16}
+  m_LocalRotation: {x: 0, y: 0.9345775, z: 0, w: 0.35575956}
+  m_LocalPosition: {x: -6.83, y: 1.93, z: 2.05}
   m_LocalScale: {x: 23.451479, y: 3.1118, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 287679056}
-  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 138.32, z: 0}
 --- !u!65 &2034709813
 BoxCollider:
   m_ObjectHideFlags: 0

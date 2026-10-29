@@ -538,6 +538,33 @@ public class RoomManager : BaseManager<RoomManager>
     }
 
     /// <summary>
+    /// 单机模式：不经过服务器，直接构造本地房间状态
+    /// </summary>
+    public void EnterOfflineRoom(string roomId, string roomName, IReadOnlyList<string> playerIds, string hostId)
+    {
+        CurrentRoom = new RoomInfo
+        {
+            RoomId = roomId,
+            RoomName = roomName,
+            HostPlayerId = hostId,
+            PlayerIds = new List<string>(playerIds),
+            MaxPlayers = Mathf.Max(playerIds.Count, 4)
+        };
+
+        GameEventBus.GetInstance().Publish(
+            GameEventType.OnRoomStateChanged,
+            new RoomStateChangedEventData
+            {
+                IsInRoom = true,
+                RoomId = CurrentRoom.RoomId,
+                PlayerCount = CurrentRoom.CurrentPlayerCount
+            }
+        );
+
+        Debug.Log($"[RoomManager] 🏠 单机房间已就绪: {roomName}，{CurrentRoom.CurrentPlayerCount} 人");
+    }
+
+    /// <summary>
     /// 清除房间状态（用于断开连接时）
     /// </summary>
     public void ClearRoomState()

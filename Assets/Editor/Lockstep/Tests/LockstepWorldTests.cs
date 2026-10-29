@@ -6,7 +6,8 @@ using UnityEngine;
 /// <summary>
 /// 逻辑世界自测（Tools/Lockstep/逻辑世界自测）
 /// 验证：双世界同指令逐帧哈希一致（确定性）、指令敏感性、直线/冲刺速度、斜向归一、
-/// 转向限速不超调、跳跃落地、圆形互推对称、完全重合兜底、死亡锁定、边界钳制
+/// 转向限速不超调、跳跃落地、圆形互推对称、完全重合兜底、死亡锁定、边界钳制、
+/// 静态墙体阻挡/滑动/推出
 /// </summary>
 public static class LockstepWorldTests
 {
@@ -14,6 +15,8 @@ public static class LockstepWorldTests
     public static void RunAll()
     {
         int pass = 0, fail = 0;
+        var radius = FP.FromRaw(LockstepConfig.PLAYER_RADIUS);
+        float radiusFloat = radius.ToFloat();
         void Check(string name, bool ok, string detail = "")
         {
             if (ok) { pass++; Debug.Log($"✅ {name} {detail}"); }
@@ -57,12 +60,13 @@ public static class LockstepWorldTests
         }
         Check("指令敏感性：单条改动即分歧", w3.ComputeStateHash() != w4.ComputeStateHash());
 
-        // ===== 直线速度：MoveZ=127 走路 60 帧 → 5m/s × 4s = 20m =====
+        // ===== 直线速度：MoveZ=127 走路 60 帧 → 5m/s × 4s = 20m（从 z=-30 出发，避开 z≈7 的墙）=====
+        const float WallFreeZ = -30f;
         var wLine = new LogicWorld(1);
-        var pLine = wLine.AddPlayer(1, new FP(0), new FP(0), 0, 100);
+        var pLine = wLine.AddPlayer(1, new FP(0), FP.FromInt((long)WallFreeZ), 0, 100);
         var fwd = new Dictionary<int, PlayerCommand> { { 1, new PlayerCommand { MoveZ = 127 } } };
         for (int i = 0; i < 60; i++) wLine.Tick(fwd);
-        Check("走路直线 60帧≈20m", Mathf.Abs(pLine.Z.ToFloat() - 20f) < 0.01f && Mathf.Abs(pLine.X.ToFloat()) < 0.001f,
+        Check("走路直线 60帧≈20m", Mathf.Abs(pLine.Z.ToFloat() - (WallFreeZ + 20f)) < 0.01f && Mathf.Abs(pLine.X.ToFloat()) < 0.001f,
               $"z={pLine.Z.ToFloat():F4} x={pLine.X.ToFloat():F4}");
 
         // ===== 斜向归一：(90,90) 与 (0,127) 等速 =====
@@ -78,12 +82,12 @@ public static class LockstepWorldTests
         Check("斜向归一 (90,90)==(0,127)速度", Mathf.Abs(dDiag - pRef.Z.ToFloat()) < 0.002f,
               $"diag={dDiag:F4} straight={pRef.Z.ToFloat():F4}");
 
-        // ===== 冲刺：15 帧 × 8m/s = 8m =====
+        // ===== 冲刺：15 帧 × 8m/s = 8m（同样从无墙区出发）=====
         var wSpr = new LogicWorld(1);
-        var pSpr = wSpr.AddPlayer(1, new FP(0), new FP(0), 0, 100);
+        var pSpr = wSpr.AddPlayer(1, new FP(0), FP.FromInt((long)WallFreeZ), 0, 100);
         var spr = new Dictionary<int, PlayerCommand> { { 1, new PlayerCommand { MoveZ = 127, Buttons = PlayerCommand.BTN_SPRINT } } };
         for (int i = 0; i < 15; i++) wSpr.Tick(spr);
-        Check("冲刺 15帧≈8m", Mathf.Abs(pSpr.Z.ToFloat() - 8f) < 0.01f, $"z={pSpr.Z.ToFloat():F4}");
+        Check("冲刺 15帧≈8m", Mathf.Abs(pSpr.Z.ToFloat() - (WallFreeZ + 8f)) < 0.01f, $"z={pSpr.Z.ToFloat():F4}");
 
         // ===== 转向限速：从 0° 转 90°，每帧 TURN_SPEED，贴合不超调 =====
         var wTurn = new LogicWorld(1);
@@ -94,22 +98,22 @@ public static class LockstepWorldTests
         for (int i = 1; i < 10; i++) wTurn.Tick(turn);
         Check("转向贴合 90°不超调", pTurn.Yaw == FPAngle.FromDegrees(90), $"yaw={pTurn.Yaw} expect={FPAngle.FromDegrees(90)}");
 
-        // ===== 圆形互推：0.6m 间距 → 分开到 2R=1m，中点不动 =====
+        // ===== 圆形互推：0.4m 间距 → 分开到 2R，中点不动 =====
         var wCol = new LogicWorld(1);
         var pColA = wCol.AddPlayer(1, new FP(0), new FP(0), 0, 100);
-        var pColB = wCol.AddPlayer(2, FP.FromInt(3) / FP.FromInt(5), new FP(0), 0, 100);
+        var pColB = wCol.AddPlayer(2, FP.FromInt(2) / FP.FromInt(5), new FP(0), 0, 100);
         wCol.Tick(new Dictionary<int, PlayerCommand>());
         float colDist = FP.Sqrt(FP.SqrDistance(pColA.X, pColA.Z, pColB.X, pColB.Z)).ToFloat();
         float midX = (pColA.X.ToFloat() + pColB.X.ToFloat()) / 2f;
-        Check("互推分开到 2R", Mathf.Abs(colDist - 1f) < 0.001f, $"dist={colDist:F4}");
-        Check("互推中点守恒", Mathf.Abs(midX - 0.3f) < 0.001f, $"mid={midX:F4}");
+        Check("互推分开到 2R", Mathf.Abs(colDist - 2f * radiusFloat) < 0.001f, $"dist={colDist:F4} expect={2f * radiusFloat:F4}");
+        Check("互推中点守恒", Mathf.Abs(midX - 0.2f) < 0.001f, $"mid={midX:F4}");
 
-        // ===== 完全重合兜底：同点出生 → 沿 ±X 分开到 1m =====
+        // ===== 完全重合兜底：同点出生 → 沿 ±X 各推一个半径 =====
         var wZero = new LogicWorld(1);
         var pZeroA = wZero.AddPlayer(1, new FP(0), new FP(0), 0, 100);
         var pZeroB = wZero.AddPlayer(2, new FP(0), new FP(0), 0, 100);
         wZero.Tick(new Dictionary<int, PlayerCommand>());
-        Check("重合兜底 ±0.5m", pZeroA.X.ToFloat() > 0.49f && pZeroB.X.ToFloat() < -0.49f,
+        Check("重合兜底 ±R", pZeroA.X.ToFloat() > radiusFloat - 0.01f && pZeroB.X.ToFloat() < -(radiusFloat - 0.01f),
               $"a.x={pZeroA.X.ToFloat():F4} b.x={pZeroB.X.ToFloat():F4}");
 
         // ===== 死亡锁定 =====
@@ -126,6 +130,68 @@ public static class LockstepWorldTests
         var outCmd = new Dictionary<int, PlayerCommand> { { 1, new PlayerCommand { MoveX = 127, Buttons = PlayerCommand.BTN_SPRINT } } };
         for (int i = 0; i < 100; i++) wBound.Tick(outCmd);
         Check("边界钳制 500m", pBound.X.Raw == LockstepConfig.WORLD_LIMIT, $"x={pBound.X.ToFloat():F2}");
+
+        // ===== 静态墙体（OBB）：斜盒射线/推出、场景墙走路不穿透、卡进墙里被推出 =====
+        if (LogicArena.Walls.Length == 0)
+        {
+            Debug.LogWarning("LogicArena.Walls 为空，跳过墙体自测");
+        }
+        else
+        {
+            // 45° 斜盒（10×1，中心 (0,10)）：原点朝 +Z 射线应命中 t=9.2929，法线随朝向转成 (-0.707,-0.707)
+            var box = LogicArena.Box2.FromCenterSize(0f, 10f, 10f, 1f, 45f);
+            var tHit = LogicArena.RaycastBox(box, new FP(0), new FP(0), FPTrig.Dir(0), FP.FromInt(100),
+                                             out var hitNX, out var hitNZ);
+            Check("斜盒射线命中距离", Mathf.Abs(tHit.ToFloat() - 9.2929f) < 0.002f, $"t={tHit.ToFloat():F4}");
+            Check("斜盒命中法线随朝向旋转",
+                  Mathf.Abs(hitNX.ToFloat() + 0.7071f) < 0.002f && Mathf.Abs(hitNZ.ToFloat() + 0.7071f) < 0.002f,
+                  $"n=({hitNX.ToFloat():F3},{hitNZ.ToFloat():F3})");
+
+            // 圆心压在盒心 → 一帧推到最近一面之外，局部 |localZ| = 半厚 + 半径
+            var pushX = box.CenterX;
+            var pushZ = box.CenterZ;
+            LogicArena.ResolveCircle(box, ref pushX, ref pushZ, radius);
+            box.ToLocal(pushX, pushZ, out var pushLX, out var pushLZ);
+            Check("斜盒圆心推出最近面",
+                  !box.Contains(pushX, pushZ) &&
+                  Mathf.Abs(Mathf.Abs(pushLZ.ToFloat()) - (box.HalfZ + radius).ToFloat()) < 0.002f,
+                  $"local=({pushLX.ToFloat():F3},{pushLZ.ToFloat():F3})");
+
+            // 场景墙：随机走 300 帧，任何一帧都不能钻进墙里（撞墙停住、贴墙滑动都算通过）
+            var wWall = new LogicWorld(1);
+            var pWall = wWall.AddPlayer(1, new FP(0), new FP(0), 0, 100);
+            var wallRng = new DeterministicRNG(99);
+            bool insideWall = false;
+            for (int i = 0; i < 300 && !insideWall; i++)
+            {
+                var walkCmd = new Dictionary<int, PlayerCommand>
+                {
+                    { 1, new PlayerCommand
+                          {
+                              MoveX = (sbyte)(wallRng.NextInt(255) - 127),
+                              MoveZ = (sbyte)(wallRng.NextInt(255) - 127),
+                          } },
+                };
+                wWall.Tick(walkCmd);
+                for (int w = 0; w < LogicArena.Walls.Length; w++)
+                    if (LogicArena.Walls[w].Contains(pWall.X, pWall.Z)) { insideWall = true; break; }
+            }
+            Check("场景墙随机走 300 帧不穿透", !insideWall,
+                  $"pos=({pWall.X.ToFloat():F2},{pWall.Z.ToFloat():F2})");
+
+            // 出生在墙心 → 一帧推出到最近的长边之外（圆心离墙面正好一个半径）
+            var wall = LogicArena.Walls[0];
+            var wInside = new LogicWorld(1);
+            var pInside = wInside.AddPlayer(1, wall.CenterX, wall.CenterZ, 0, 100);
+            wInside.Tick(new Dictionary<int, PlayerCommand>());
+            wall.ToLocal(pInside.X, pInside.Z, out var insideLX, out var insideLZ);
+            float clearance = Mathf.Abs(insideLZ.ToFloat()) - wall.HalfZ.ToFloat();
+            Check("卡进墙里被推到最近面",
+                  !wall.Contains(pInside.X, pInside.Z) &&
+                  Mathf.Abs(insideLX.ToFloat()) < wall.HalfX.ToFloat() && // 推的是长边，不是端头
+                  Mathf.Abs(clearance - radius.ToFloat()) < 0.002f,
+                  $"local=({insideLX.ToFloat():F2},{insideLZ.ToFloat():F2}) clearance={clearance:F3}");
+        }
 
         // ===== 跳跃与落地：单帧起跳 → 上升 → 60帧内回到地面且不再下坠 =====
         var wJump = new LogicWorld(1);

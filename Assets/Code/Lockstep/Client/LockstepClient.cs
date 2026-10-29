@@ -111,8 +111,7 @@ namespace GameLockstep
             while (SimFrame < targetFrame)
                 SimulateFrame(SimFrame + 1, BuildInputs(SimFrame + 1));
         }
-
-        /// <summary>回滚到 frame-1 的快照，重演 frame..SimFrame（BuildInputs 权威优先）</summary>
+                                      
         private void RollbackAndReplay(long frame)
         {
             long replayTo = SimFrame;

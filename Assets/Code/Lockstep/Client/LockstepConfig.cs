@@ -1,4 +1,4 @@
-namespace GameLockstep
+﻿namespace GameLockstep
 {
     /// <summary>
     /// 帧同步全局常量（阶段0决策的落地）
@@ -22,7 +22,7 @@ namespace GameLockstep
         public const int TICK_MS = 1000 / TICK_RATE;
 
         /// <summary>输入延迟帧数：本地第 N 帧产生的指令在第 N+2 帧生效</summary>
-        public const int INPUT_DELAY_FRAMES = 2;
+        public const int INPUT_DELAY_FRAMES = 0;
 
         /// <summary>服务端等齐一帧指令的超时（毫秒）：超时用空指令补齐推进（不卡全场）</summary>
         public const int FRAME_TIMEOUT_MS = 200;
@@ -53,7 +53,7 @@ namespace GameLockstep
         // ===== 世界尺度（单位：定点数·米） =====
 
         /// <summary>玩家碰撞半径（米）</summary>
-        public const long PLAYER_RADIUS = FP.One / 2;
+        public const long PLAYER_RADIUS = FP.One *3/5;
 
         /// <summary>世界边界（±米，玩家活动范围硬限制，防逃逸）</summary>
         public const long WORLD_LIMIT = 500 * FP.One;

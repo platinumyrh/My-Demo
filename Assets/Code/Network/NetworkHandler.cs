@@ -342,7 +342,7 @@ public class NetworkHandler : MonoBehaviour
         foreach (var s in notify.Seats)
             seats.Add(new KeyValuePair<string, int>(s.PlayerId, s.Seat));
         LockstepNetEvents.RaiseGameStart(notify.LockstepSeed, notify.TickRate, seats);
-        LockstepGameDriver.BeginSession(notify.LockstepSeed, notify.TickRate, seats);
+        LockstepGameDriver.BeginSession(notify.LockstepSeed, notify.TickRate, seats, notify.StartTime);
 
         EventBus.Publish(
             GameEventType.OnGameStart,

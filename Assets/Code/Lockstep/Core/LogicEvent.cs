@@ -25,6 +25,14 @@ namespace GameLockstep
         public FP DirZ;
         public FP HitX;
         public FP HitZ;
+
+        /// <summary>true = 弹道被墙挡住（此时 TargetId=0，HitX/HitZ 是墙面命中点）</summary>
+        public bool HitWall;
+
+        /// <summary>墙面法线（定点单位向量），表现层用来摆弹孔朝向</summary>
+        public FP HitNX;
+        public FP HitNZ;
+
         public int Damage;
     }
 }

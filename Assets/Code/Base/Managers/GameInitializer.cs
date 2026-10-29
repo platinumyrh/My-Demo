@@ -137,7 +137,7 @@ public class GameInitializer : MonoBehaviour
             float angle = index * (360f / slotCount) * Mathf.Deg2Rad;
             return new Vector3(
                 Mathf.Cos(angle) * remotePlayerSpawnRadius,
-                3f, // 所有出生点抬高3，避免生成时陷入地面
+                7f, // 所有出生点抬高，避免生成时陷入地面
                 Mathf.Sin(angle) * remotePlayerSpawnRadius
             );
         }

@@ -303,7 +303,7 @@ public class NetworkManager : MonoBehaviour
             // 发送
             _udpClient.Send(sendData, sendData.Length);
             
-            //Debug.Log($"[NetworkManager] 发送消息: {msgId}, 大小: {sendData.Length} bytes");
+            Debug.Log($"[NetworkManager] 发送消息: {msgId}, 大小: {sendData.Length} bytes");
         }
         catch (Exception ex)
         {
@@ -388,6 +388,7 @@ public class NetworkManager : MonoBehaviour
 
             byte[] payload = new byte[length];
             Buffer.BlockCopy(data, 8, payload, 0, length);
+            //Debug.Log("收到服务器消息");
 
             // 分发到对应的处理器
             MsgID messageId = (MsgID)msgId;

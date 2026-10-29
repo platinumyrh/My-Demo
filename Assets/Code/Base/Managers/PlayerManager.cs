@@ -79,6 +79,12 @@ public class PlayerManager : BaseManager<PlayerManager>
                 _playerNames[player.PlayerId] = player.PlayerName;
     }
 
+    public void RegisterPlayerName(string playerId, string playerName)
+    {
+        if (!string.IsNullOrEmpty(playerId) && !string.IsNullOrEmpty(playerName))
+            _playerNames[playerId] = playerName;
+    }
+
     public string ResolveDisplayName(string playerId, string fallback)
     {
         if (_playerNames.TryGetValue(playerId, out var name) && !string.IsNullOrEmpty(name)) return name;
