@@ -14,11 +14,46 @@ public class PlayerView : MonoBehaviour
     public NameplateUI Nameplate { get; private set; }
     public WeaponController Weapon { get; private set; }
 
+    [Header("头部瞄准（留空自动找 Droid/Body/HeadCtrl/Head）")]
+    [SerializeField] private Transform head;
+
+    // 头部静止时的世界朝向（已扣掉根节点 yaw）：根节点 yaw=0 时头部指向世界 +Z，正好是逻辑角 0°
+    private Quaternion _headBaseRot = Quaternion.identity;
+    private float _headAimYawDeg;
+    private bool _hasHeadAim;
+
     private void Awake()
     {
         Anim = PlayerAnimationController.Resolve(transform);
         Nameplate = GetComponentInChildren<NameplateUI>(true);
         Weapon = GetComponentInChildren<WeaponController>(true);
+
+        if (head == null) head = transform.Find("Droid/Body/HeadCtrl/Head");
+        if (head != null)
+        {
+            // 只扣 yaw 不扣整体旋转：Droid/HeadCtrl 上那些 ±90° X 是用来翻正模型的，
+            // 属于头部静止姿态的一部分
+            _headBaseRot = Quaternion.Euler(0f, -transform.eulerAngles.y, 0f) * head.rotation;
+        }
+    }
+
+    /// <summary>
+    /// 头部瞄准角（逻辑瞄准角，绕世界 Y）。身体由移动方向驱动，头单独追准星。
+    /// 实际旋转放在 LateUpdate：Animator 在 Update 阶段写子物体，这里后写才能压住
+    /// </summary>
+    public void SetHeadAim(float aimYawDeg)
+    {
+        _headAimYawDeg = aimYawDeg;
+        _hasHeadAim = head != null;
+    }
+
+    /// <summary>死亡等场景：交还给动画，不再每帧覆盖头部朝向</summary>
+    public void ClearHeadAim() => _hasHeadAim = false;
+
+    private void LateUpdate()
+    {
+        if (!_hasHeadAim) return;
+        head.rotation = Quaternion.Euler(0f, _headAimYawDeg, 0f) * _headBaseRot;
     }
 
     public void Initialize(string playerId, string displayName, bool isLocal)

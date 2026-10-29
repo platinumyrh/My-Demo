@@ -41,7 +41,11 @@ public class LockstepGameDriver : MonoBehaviour
         public bool IsLocal;
 
         public Vector3 PrevPos, CurPos;          // 相邻逻辑帧位置（插值用）
-        public float PrevYawDeg, CurYawDeg;
+        public float PrevYawDeg, CurYawDeg;      // 瞄准角（逻辑朝向）：驱动头部
+        public float TargetBodyYawDeg;           // 身体目标朝向：逻辑帧按位移算，45° 吸附
+        public float VisualBodyYawDeg;           // 身体表现朝向：渲染帧按角速度追目标
+        public float TurnBlend;                  // 转身片段混合权重（已平滑）
+        public bool Dead;
         public bool PrevGrounded = true;
         public int PrevReloadTicks;
         public int LastHp = int.MinValue;
@@ -70,6 +74,23 @@ public class LockstepGameDriver : MonoBehaviour
     private CameraFollow _cameraFollow;
 
     private float TickSeconds => LockstepConfig.TICK_MS / 1000f;
+
+    [Header("身体朝向（纯表现，不改逻辑和瞄准）")]
+    [Tooltip("站立时身体转向角速度（度/秒），45° 约需 45/该值 秒")]
+    [SerializeField] private float bodyTurnRateIdle = 270f;
+
+    [Tooltip("移动时身体转向角速度（度/秒）：跑动中不该慢慢转身")]
+    [SerializeField] private float bodyTurnRateMoving = 360f;
+
+    [Tooltip("转身片段最多占多少权重（0~1）。混合树的轴端点 ±0.5 才是 100% 转身片段，" +
+             "而且片段自带旋转会和根节点叠加，别给太满；调到 0 就是完全不用转身片段")]
+    [SerializeField, Range(0f, 1f)] private float turnClipMaxWeight = 0.25f;
+
+    [Tooltip("转身权重平滑时间（秒）")]
+    [SerializeField] private float turnBlendSmoothTime = 0.06f;
+
+    /// <summary>角速度到这个值时 turn 混合参数顶满（对应权重上限）</summary>
+    private const float TURN_FULL_DEG_PER_SEC = 360f;
 
     #region 会话启动
 
@@ -220,7 +241,9 @@ public class LockstepGameDriver : MonoBehaviour
                 view.PrevPos = view.CurPos;
                 view.CurYawDeg = FPAngle.ToDegrees(lp0.Yaw);
                 view.PrevYawDeg = view.CurYawDeg;
-                view.Transform.SetPositionAndRotation(view.CurPos, Quaternion.Euler(0f, view.CurYawDeg, 0f));
+                view.TargetBodyYawDeg = view.CurYawDeg;   // 出生时身体朝向 = 逻辑朝向
+                view.VisualBodyYawDeg = view.TargetBodyYawDeg;
+                view.Transform.SetPositionAndRotation(view.CurPos, Quaternion.Euler(0f, view.VisualBodyYawDeg, 0f));
             }
             _views[seat] = view;
         }
@@ -392,6 +415,16 @@ public class LockstepGameDriver : MonoBehaviour
         if (lp == null) return;
         view.CurPos = new Vector3(lp.X.ToFloat(), lp.Y.ToFloat(), lp.Z.ToFloat());
         view.CurYawDeg = FPAngle.ToDegrees(lp.Yaw);
+        view.Dead = lp.IsDead;
+
+        // 身体只跟位移：原地转准星不再带着全身转；静止/死亡保持上一次朝向
+        Vector3 moved = view.CurPos - view.PrevPos;
+        moved.y = 0f;
+        if (!lp.IsDead && moved.sqrMagnitude > 0.0004f) // 0.02m/帧，滤掉碰撞推挤的碎位移
+        {
+            float deg = Mathf.Atan2(moved.x, moved.z) * Mathf.Rad2Deg;
+            view.TargetBodyYawDeg = Mathf.Round(deg / 45f) * 45f; // 八向吸附
+        }
     }
 
     private View GetLocalView()
@@ -406,16 +439,39 @@ public class LockstepGameDriver : MonoBehaviour
     /// <summary>渲染插值：逻辑帧之间按 alpha 摆 Transform + 喂动画</summary>
     private void RenderFrame(float alpha)
     {
+        float t = Mathf.Clamp01(alpha);
+        float dt = Mathf.Max(Time.deltaTime, 0.0001f);
+
         foreach (var kv in _views)
         {
             var view = kv.Value;
             if (view.Transform == null) continue;
 
-            Vector3 pos = Vector3.Lerp(view.PrevPos, view.CurPos, Mathf.Clamp01(alpha));
-            float yaw = Mathf.LerpAngle(view.PrevYawDeg, view.CurYawDeg, Mathf.Clamp01(alpha));
-            view.Transform.SetPositionAndRotation(pos, Quaternion.Euler(0f, yaw, 0f));
+            Vector3 pos = Vector3.Lerp(view.PrevPos, view.CurPos, t);
 
-            UpdateAnimationView(view);
+            Vector3 delta = view.CurPos - view.PrevPos;
+            delta.y = 0f;
+            float speed = delta.magnitude / TickSeconds;
+
+            // 身体朝向按角速度追目标：不在一个逻辑帧里瞬间转完（渲染帧推进，和 15Hz 解耦）
+            float turnRate = Mathf.Lerp(bodyTurnRateIdle, bodyTurnRateMoving,
+                                        Mathf.InverseLerp(0f, 5f, speed));
+            float prevBodyYaw = view.VisualBodyYawDeg;
+            if (!view.Dead)
+                view.VisualBodyYawDeg = Mathf.MoveTowardsAngle(prevBodyYaw, view.TargetBodyYawDeg,
+                                                               turnRate * dt);
+            float bodyYawVel = Mathf.DeltaAngle(prevBodyYaw, view.VisualBodyYawDeg) / dt;
+
+            view.Transform.SetPositionAndRotation(pos, Quaternion.Euler(0f, view.VisualBodyYawDeg, 0f));
+
+            // 头（连枪一起）单独追准星；死亡后交还给死亡动画
+            if (view.Player != null)
+            {
+                if (view.Dead) view.Player.ClearHeadAim();
+                else view.Player.SetHeadAim(Mathf.LerpAngle(view.PrevYawDeg, view.CurYawDeg, t));
+            }
+
+            UpdateAnimationView(view, delta, speed, bodyYawVel, dt);
         }
     }
 
@@ -456,16 +512,12 @@ public class LockstepGameDriver : MonoBehaviour
         if (lp.IsDead && !view.Anim.IsDead) view.Anim.SetDead(true);
     }
 
-    /// <summary>逐渲染帧动画参数：本地空间移动轴/速度/转向</summary>
-    private void UpdateAnimationView(View view)
+    /// <summary>逐渲染帧动画参数：本地空间移动轴/速度/转身混合</summary>
+    private void UpdateAnimationView(View view, Vector3 delta, float speed, float bodyYawVel, float dt)
     {
         if (view.Anim == null) return;
 
-        Vector3 delta = view.CurPos - view.PrevPos;
-        delta.y = 0f;
-        float speed = delta.magnitude / TickSeconds;
-
-        // 世界位移 → 角色本地空间喂混合树（与旧链路同规则）
+        // 世界位移 → 当前身体朝向的本地空间（转身途中 localDir 从斜后摆到正前，二维树自然演成拐弯）
         Vector3 localDir = view.Transform.InverseTransformDirection(delta.normalized);
         if (delta.sqrMagnitude > 0.000001f)
             view.Anim.SetMoveInput(localDir.x, localDir.z);
@@ -476,8 +528,14 @@ public class LockstepGameDriver : MonoBehaviour
         float sprintThreshold = (5f + 8f) * 0.5f; // 走/跑速度中值，超阈视为冲刺
         view.Anim.ApplyMoveAnimSpeed(speed > sprintThreshold);
 
-        float yawRate = Mathf.DeltaAngle(view.PrevYawDeg, view.CurYawDeg) / TickSeconds;
-        view.Anim.SetTurn(Mathf.Clamp(yawRate / 720f, -1f, 1f));
+        // turn 是 Locomotion 混合树的轴：-0.5 左手原地转 / 0 移动树 / +0.5 右手原地转，
+        // 所以参数 = 目标片段权重 × 0.5。片段自带旋转，这里只借一部分补脚步，朝向由根节点负责
+        float turnTarget = view.Dead
+            ? 0f
+            : Mathf.Clamp(bodyYawVel / TURN_FULL_DEG_PER_SEC, -1f, 1f) * turnClipMaxWeight * 0.5f;
+        float k = 1f - Mathf.Exp(-dt / Mathf.Max(0.001f, turnBlendSmoothTime));
+        view.TurnBlend = Mathf.Lerp(view.TurnBlend, turnTarget, k);
+        view.Anim.SetTurn(view.TurnBlend);
 
         if (view.IsLocal) view.Anim.SetFiring(_fireHeld);
     }
@@ -512,9 +570,12 @@ public class LockstepGameDriver : MonoBehaviour
     {
         if (!_views.TryGetValue(ev.ShooterId, out var view) || view.Transform == null) return;
 
-        Vector3 origin = view.IsLocal && view.Weapon != null && view.Weapon.muzzle != null
+        // 枪口统一取模型上的 muzzle（Head 的子物体，跟着瞄准转）。
+        // 远端以前用的是 Transform.forward 推出来的假枪口，头身分离后 forward 变成了身体朝向，
+        // 准星在侧面时弹道起点就偏出枪口，看起来"歪"
+        Vector3 origin = view.Weapon != null && view.Weapon.muzzle != null
             ? view.Weapon.muzzle.position
-            : view.Transform.position + view.Transform.forward * 0.6f + Vector3.up * 1f;
+            : view.Transform.position + Vector3.up * 1f;
         Vector3 end = new Vector3(ev.HitX.ToFloat(), 1f, ev.HitZ.ToFloat());
         Vector3 dir = end - origin;
         if (dir.sqrMagnitude < 0.0001f) dir = view.Transform.forward;
