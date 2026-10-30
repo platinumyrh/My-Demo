@@ -305,7 +305,9 @@ public class RoomUIController : MonoBehaviour
                 if (playerId == room.HostPlayerId) suffix = "  (房主)";
                 else if (playerId == localId) suffix = "  (我)";
 
-                text.text = playerId + suffix;
+                // 优先显示昵称（PlayerManager 的昵称表），查不到才回退 ID
+                string displayName = PlayerManager.GetInstance().ResolveDisplayName(playerId, playerId);
+                text.text = displayName + suffix;
             }
         }
     }

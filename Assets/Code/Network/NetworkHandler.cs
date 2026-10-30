@@ -158,6 +158,9 @@ public class NetworkHandler : MonoBehaviour
             // 会话状态由 NetworkManager 保存（纯数据）
             NetworkManager.Instance.ApplyLoginSuccess(resp.UserId, resp.Username, resp.Token);
 
+            // 自己的昵称也登记进昵称表：房间列表/名牌统一从 PlayerManager 取名
+            PlayerManager.GetInstance().RegisterPlayerName(resp.UserId, resp.Username);
+
             Debug.Log($"[NetworkHandler] ✅ 登录成功: {resp.Username} ({resp.UserId})");
 
             EventBus.Publish(
@@ -301,6 +304,11 @@ public class NetworkHandler : MonoBehaviour
     private void OnPlayerJoin(PlayerJoinNotify notify)
     {
         Debug.Log($"[NetworkHandler] 👋 玩家加入: {notify.Player.PlayerName} ({notify.Player.PlayerId})");
+
+        // 🔑 昵称必须在解析层就登记：PlayerManager 的 OnPlayerJoinedRoom 订阅是在 Main 场景
+        // 的 GameInitializer 里才建立的。大厅/房间场景收到的加入广播走不到它，
+        // 结果房主端进 Main 重建远端玩家时 ResolveDisplayName 查不到名字，只能回退成 ID
+        PlayerManager.GetInstance().RegisterPlayerName(notify.Player.PlayerId, notify.Player.PlayerName);
 
         EventBus.Publish(
             GameEventType.OnPlayerJoinedRoom,

@@ -44,7 +44,15 @@ public class PlayerManager : BaseManager<PlayerManager>
 
     private void OnRemotePlayerJoined(PlayerJoinedRoomEventData eventData)
     {
-        _playerNames[eventData.PlayerId] = eventData.PlayerName;
+        RegisterPlayerName(eventData.PlayerId, eventData.PlayerName);
+
+        // 视图可能已经按房间成员列表建好了（名字后到）：补刷名牌，不重建对象
+        if (_remotePlayers.TryGetValue(eventData.PlayerId, out var existing) && existing != null)
+        {
+            existing.SetDisplayName(ResolveDisplayName(eventData.PlayerId, eventData.PlayerName));
+            return;
+        }
+
         CreateRemotePlayer(eventData.PlayerId, eventData.PlayerName);
     }
 
@@ -95,7 +103,8 @@ public class PlayerManager : BaseManager<PlayerManager>
     {
         if (_remotePlayers.TryGetValue(playerId, out var existing))
         {
-            Debug.LogWarning($"[PlayerManager] ⚠️ 远程玩家 {playerId} 已存在");
+            // 对象已在、昵称后到：补刷显示名，避免名牌一直停在 playerId
+            if (existing != null) existing.SetDisplayName(ResolveDisplayName(playerId, playerName));
             return existing;
         }
         if (RemotePlayerPrefab == null)
