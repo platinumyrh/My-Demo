@@ -56,7 +56,14 @@ public class PlayerManager : BaseManager<PlayerManager>
         CreateRemotePlayer(eventData.PlayerId, eventData.PlayerName);
     }
 
-    private void OnRemotePlayerLeft(PlayerLeftRoomEventData eventData) => RemoveRemotePlayer(eventData.PlayerId);
+    private void OnRemotePlayerLeft(PlayerLeftRoomEventData eventData)
+    {
+        // 对局中座位是固定的：逻辑世界整局不删人，视图也不能销毁，
+        // 否则驱动里 View.Transform 会变成 null。只标离线，整局继续模拟。
+        if (LockstepGameDriver.Instance != null) return;
+
+        RemoveRemotePlayer(eventData.PlayerId);
+    }
 
     public PlayerView CreateLocalPlayer(string playerId, string playerName)
     {

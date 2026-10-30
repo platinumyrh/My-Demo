@@ -65,8 +65,20 @@ public class ProjectileVFX : MonoBehaviour
         if (!vfx._offsetMeasured)
         {
             vfx.MeasureVisualOffset();
+            vfx.DisablePackageDemoScripts();
         }
         vfx.Launch(origin, direction.normalized, distance);
+    }
+
+    /// <summary>
+    /// EffectCore 的示例弹丸自带 ECExplodingProjectile：它每个物理帧用刚体速度摆朝向
+    /// （速度恒为 0 时刷 LookRotation 警告），还会在撞到东西时 Destroy 自己。
+    /// 本项目的飞行完全由本组件用 transform 驱动，这个演示脚本没有作用，取到池对象时关掉
+    /// </summary>
+    private void DisablePackageDemoScripts()
+    {
+        foreach (var demo in GetComponentsInChildren<ECExplodingProjectile>(true))
+            demo.enabled = false;
     }
 
     /// <summary>

@@ -106,6 +106,22 @@ public class CameraFollow : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 瞬移（复活/重开）：直接落到位，不做平滑，避免镜头横穿地图
+    /// </summary>
+    public void SnapToTarget()
+    {
+        if (target == null)
+        {
+            TryFindTarget();
+            if (target == null) return;
+        }
+
+        RecomputeOffset();
+        transform.position = ComputeLookPoint() + _offset;
+        _followVelocity = Vector3.zero;
+    }
+
     /// <summary>注视点 = 玩家位置 + 构图偏移（沿当前观察方向的水平投影）</summary>
     private Vector3 ComputeLookPoint()
     {

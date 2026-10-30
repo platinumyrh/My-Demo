@@ -72,6 +72,8 @@ public class LockstepGameDriver : MonoBehaviour
     private Vector2 _moveAxes;                  // 摄像机相对输入轴
     private bool _fireHeld, _sprintHeld, _jumpHeld, _reloadSticky;
     private CameraFollow _cameraFollow;
+    private bool _snapCameraPending;            // 复活瞬移：等插值写完玩家位置后再摆摄像机
+    private ScoreboardUI _scoreboard;
 
     private float TickSeconds => LockstepConfig.TICK_MS / 1000f;
 
@@ -168,6 +170,9 @@ public class LockstepGameDriver : MonoBehaviour
         }
 
         BuildViews();
+        InitScoreboard();
+        GameEventBus.GetInstance().Subscribe<PlayerLeftRoomEventData>(
+            GameEventType.OnPlayerLeftRoom, OnPlayerLeftRoom);
         LockstepNetEvents.FrameInputsReceived += OnFrameInputs;
 
         _clock.Start();
@@ -249,10 +254,70 @@ public class LockstepGameDriver : MonoBehaviour
         }
     }
 
+    /// <summary>计分板：座位→显示名在开赛时定一次，数值每逻辑帧从逻辑世界推</summary>
+    private void InitScoreboard()
+    {
+        _scoreboard = FindObjectOfType<ScoreboardUI>(true);
+        if (_scoreboard == null)
+        {
+            var panel = GameObject.Find("Canvas_ScreenSpace/Panel_PlayerScore");
+            if (panel == null)
+            {
+                Debug.LogWarning("[LockstepDriver] ⚠️ 没找到计分面板 Canvas_ScreenSpace/Panel_PlayerScore");
+                return;
+            }
+            _scoreboard = panel.AddComponent<ScoreboardUI>();
+        }
+
+        var names = new Dictionary<int, string>();
+        foreach (var kv in _seatToPlayerId)
+        {
+            string name = kv.Value;
+            if (_views.TryGetValue(kv.Key, out var view) && view.Player != null &&
+                !string.IsNullOrEmpty(view.Player.DisplayName))
+            {
+                name = view.Player.DisplayName;
+            }
+            names[kv.Key] = name;
+        }
+
+        _scoreboard.Build(names, _localSeat);
+    }
+
+    private void UpdateScoreboard()
+    {
+        if (_scoreboard == null) return;
+
+        var players = World?.Players;
+        if (players == null) return;
+
+        for (int i = 0; i < players.Count; i++)
+            _scoreboard.SetEntry(players[i].PlayerId, players[i].Kills, players[i].Deaths);
+    }
+
     private void OnDestroy()
     {
+        _scoreboard?.Clear();
+        GameEventBus.GetInstance().Unsubscribe<PlayerLeftRoomEventData>(
+            GameEventType.OnPlayerLeftRoom, OnPlayerLeftRoom);
         LockstepNetEvents.FrameInputsReceived -= OnFrameInputs;
         if (Instance == this) Instance = null;
+    }
+
+    /// <summary>
+    /// 对局中有人主动退出：座位和逻辑数据整局保留，只是不再有真值输入。
+    /// 表现层把计分表该行隐藏，模型继续由逻辑世界驱动（不能销毁视图）。
+    /// </summary>
+    private void OnPlayerLeftRoom(PlayerLeftRoomEventData eventData)
+    {
+        foreach (var kv in _seatToPlayerId)
+        {
+            if (kv.Value != eventData.PlayerId) continue;
+
+            _scoreboard?.SetEntryVisible(kv.Key, false);
+            Debug.Log($"[LockstepDriver] 🚪 玩家 {eventData.PlayerId} 退出对局，座位 {kv.Key} 保留并补空输入");
+            return;
+        }
     }
 
     private void OnFrameInputs(long frame, IReadOnlyDictionary<int, PlayerCommand> inputs)
@@ -295,6 +360,18 @@ public class LockstepGameDriver : MonoBehaviour
     private void SampleInput()
     {
         if (_input == null) return;
+
+        // 菜单打开：人物停手停脚，但会话照常推进——帧同步不能把时钟停掉，
+        // 否则服务端继续封帧，错过的权威帧不会补发
+        if (GameMenuUI.Instance != null && GameMenuUI.Instance.IsOpen)
+        {
+            _moveAxes = Vector2.zero;
+            _fireHeld = false;
+            _sprintHeld = false;
+            _jumpHeld = false;
+            _reloadSticky = false;
+            return;
+        }
 
         // 换弹是边沿触发（WasPressedThisFrame 只在渲染帧有效），粘性捕获到下一个逻辑帧
         if (_input.ReloadPressed) _reloadSticky = true;
@@ -388,6 +465,7 @@ public class LockstepGameDriver : MonoBehaviour
             CaptureView(kv.Key, kv.Value, prev: false);
             UpdateVitalsView(kv.Key, kv.Value);
         }
+        UpdateScoreboard();
 
         // 6. 消费本帧事件（单调帧号闸门：回滚重演的旧帧不再消费）
         ConsumeEvents();
@@ -413,9 +491,26 @@ public class LockstepGameDriver : MonoBehaviour
         }
         var lp = World?.GetPlayer(seat);
         if (lp == null) return;
+
+        bool wasDead = view.Dead;
         view.CurPos = new Vector3(lp.X.ToFloat(), lp.Y.ToFloat(), lp.Z.ToFloat());
         view.CurYawDeg = FPAngle.ToDegrees(lp.Yaw);
         view.Dead = lp.IsDead;
+
+        // 生死切换：插值起点贴到当前状态，别让模型从尸体位置滑到出生点
+        if (wasDead != lp.IsDead)
+        {
+            view.PrevPos = view.CurPos;
+            view.PrevYawDeg = view.CurYawDeg;
+
+            if (!lp.IsDead)
+            {
+                view.TargetBodyYawDeg = view.CurYawDeg;
+                view.VisualBodyYawDeg = view.CurYawDeg;
+                if (view.IsLocal) _snapCameraPending = true;
+            }
+            return;
+        }
 
         // 身体只跟位移：原地转准星不再带着全身转；静止/死亡保持上一次朝向
         Vector3 moved = view.CurPos - view.PrevPos;
@@ -473,6 +568,13 @@ public class LockstepGameDriver : MonoBehaviour
 
             UpdateAnimationView(view, delta, speed, bodyYawVel, dt);
         }
+
+        // 复活瞬移：插值已把本地玩家摆到出生点，此时摄像机再直接落位
+        if (_snapCameraPending)
+        {
+            _snapCameraPending = false;
+            SnapCameraToTarget();
+        }
     }
 
     /// <summary>逐逻辑帧表现：血量名牌、换弹动画、生死状态、跳跃/落地</summary>
@@ -510,6 +612,14 @@ public class LockstepGameDriver : MonoBehaviour
         view.Anim.SetFalling(!grounded && lp.VerticalVelocity.ToFloat() * LockstepConfig.TICK_RATE < -0.5f);
 
         if (lp.IsDead && !view.Anim.IsDead) view.Anim.SetDead(true);
+        else if (!lp.IsDead && view.Anim.IsDead) view.Anim.SetDead(false);
+    }
+
+    /// <summary>本地玩家瞬移（复活）：摄像机直接落位，不做平滑追赶</summary>
+    private void SnapCameraToTarget()
+    {
+        _cameraFollow ??= FindObjectOfType<CameraFollow>();
+        _cameraFollow?.SnapToTarget();
     }
 
     /// <summary>逐渲染帧动画参数：本地空间移动轴/速度/转身混合</summary>
@@ -546,11 +656,15 @@ public class LockstepGameDriver : MonoBehaviour
         var events = World?.TickEvents;
         if (events == null || events.Count == 0) return;
 
+        // 去重按帧，不按事件：同一帧里可能有 Fired→Hit→Died 多条，
+        // 逐条推进闸门会把同帧后面的 Hit/Died 全吃掉。
+        // 回滚重演只保证帧不重复，所以"整帧只播一次"就足够
+        long frame = World.Frame;
+        if (frame <= _lastConsumedEventFrame) return;
+        _lastConsumedEventFrame = frame;
+
         foreach (var ev in events)
         {
-            if (ev.Frame <= _lastConsumedEventFrame) continue; // 回滚重演去重
-            _lastConsumedEventFrame = ev.Frame;
-
             switch (ev.Type)
             {
                 case LogicEventType.Fired:

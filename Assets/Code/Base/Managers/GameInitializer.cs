@@ -44,6 +44,9 @@ public class GameInitializer : MonoBehaviour
     {
         Debug.Log("[GameInitializer] 🎮 开始初始化游戏组件...");
 
+        // Esc 菜单跟随场景出现；在这里挂可以在首帧渲染前把面板藏起来
+        GameMenuUI.Ensure();
+
         // 延迟一帧确保所有组件就绪
         Invoke(nameof(LateInitialize), 0.1f);
     }
