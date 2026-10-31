@@ -131,6 +131,33 @@ public class NetworkManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 登录前指定服务器地址。Connect 用的是 _serverEndpoint，光改 serverIP 字符串不生效，
+    /// 所以这里重新解析并重建 EndPoint；已连接时改地址会先断开旧连接（换服必须重连）
+    /// </summary>
+    public bool SetServerAddress(string ip, int port = 0)
+    {
+        if (!IPAddress.TryParse(ip, out var address))
+        {
+            Debug.LogWarning($"[NetworkManager] ⚠️ 服务器地址格式不对: {ip}");
+            return false;
+        }
+
+        bool changed = ip != serverIP || (port > 0 && port != serverPort);
+        if (changed && _isConnected)
+        {
+            Debug.Log("[NetworkManager] 🔁 目标地址变更，断开旧连接");
+            Disconnect();
+        }
+
+        serverIP = ip;
+        if (port > 0) serverPort = port;
+        _serverEndpoint = new IPEndPoint(address, serverPort);
+
+        Debug.Log($"[NetworkManager] 🎯 目标服务器: {serverIP}:{serverPort}");
+        return true;
+    }
+
+    /// <summary>
     /// 连接到服务器
     /// </summary>
     public bool Connect()
@@ -144,6 +171,8 @@ public class NetworkManager : MonoBehaviour
         try
         {
             _udpClient = new UdpClient();
+            // 重连历史一次会连发多个 50 帧分块，默认 8KB 接收缓冲容易丢包
+            _udpClient.Client.ReceiveBufferSize = 1 << 20;
             _udpClient.Connect(_serverEndpoint);
             _isConnected = true;
 
@@ -356,19 +385,26 @@ public class NetworkManager : MonoBehaviour
     /// </summary>
     private void ReceiveData()
     {
-        if (!_isConnected || _udpClient == null || _udpClient.Available <= 0) return;
+        if (!_isConnected || _udpClient == null) return;
 
-        try
+        // 一帧内把内核缓冲里的报文全部取走：历史帧是连续分块，只收一条会堆积到下次帧
+        const int MAX_DATAGRAMS_PER_FRAME = 256;
+        int taken = 0;
+        while (_udpClient.Available > 0 && taken++ < MAX_DATAGRAMS_PER_FRAME)
         {
-            IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
-            byte[] data = _udpClient.Receive(ref remoteEP);
-            
-            ProcessReceivedData(data);
-        }
-        catch (Exception)
-        {
-            // UDP接收异常通常可以忽略
-            // 空捕获：避免 CS0168 警告（未使用的变量 ex）
+            try
+            {
+                IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
+                byte[] data = _udpClient.Receive(ref remoteEP);
+
+                ProcessReceivedData(data);
+            }
+            catch (Exception)
+            {
+                // UDP接收异常通常可以忽略
+                // 空捕获：避免 CS0168 警告（未使用的变量 ex）
+                break;
+            }
         }
     }
 

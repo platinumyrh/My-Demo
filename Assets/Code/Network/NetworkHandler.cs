@@ -117,11 +117,15 @@ public class NetworkHandler : MonoBehaviour
         // === lockstep 帧同步（高频路径，直调转换层→LockstepNetEvents）===
         Register(MsgID.S2CLockstepInputs, LockstepInputsNotify.Parser, OnLockstepInputs);
 
+        // === 断线重连 ===
+        Register(MsgID.S2CReconnectInfo, ReconnectInfoNotify.Parser, ReconnectSession.Begin);
+        Register(MsgID.S2CReconnectFrames, ReconnectFramesNotify.Parser, ReconnectSession.OnFrames);
+
         // === 游戏控制 ===
         Register(MsgID.S2CGameStart, GameStartNotify.Parser, OnGameStart);
         Register(MsgID.S2CGameOver, GameOverNotify.Parser, OnGameOver);
 
-        Debug.Log("[NetworkHandler] ✅ 已注册 11 个消息处理器");
+        Debug.Log("[NetworkHandler] ✅ 已注册 13 个消息处理器");
     }
 
     #endregion
@@ -162,6 +166,10 @@ public class NetworkHandler : MonoBehaviour
             PlayerManager.GetInstance().RegisterPlayerName(resp.UserId, resp.Username);
 
             Debug.Log($"[NetworkHandler] ✅ 登录成功: {resp.Username} ({resp.UserId})");
+
+            // 顺带问一句：这个账号在服务端还有没打完的对局？
+            // 有的话服务器会主动推 ReconnectInfo，客户端切 Main 并快进历史帧
+            ReconnectSession.Request();
 
             EventBus.Publish(
                 GameEventType.OnLoginSuccess,
@@ -345,12 +353,12 @@ public class NetworkHandler : MonoBehaviour
         Debug.Log($"[NetworkHandler] 🎮 游戏开始! Room: {notify.RoomId}");
 
         // lockstep 初始化：种子/帧率/座位表。
-        // 驱动层会先缓存；Main 场景生成 PlayerView 后再真正启动会话。
+        // 启动器会先缓存；Main 场景生成 PlayerView 后再真正启动会话。
         var seats = new List<KeyValuePair<string, int>>(notify.Seats.Count);
         foreach (var s in notify.Seats)
             seats.Add(new KeyValuePair<string, int>(s.PlayerId, s.Seat));
         LockstepNetEvents.RaiseGameStart(notify.LockstepSeed, notify.TickRate, seats);
-        LockstepGameDriver.BeginSession(notify.LockstepSeed, notify.TickRate, seats, notify.StartTime);
+        LockstepSessionBootstrap.BeginSession(notify.LockstepSeed, notify.TickRate, seats, online: true);
 
         EventBus.Publish(
             GameEventType.OnGameStart,

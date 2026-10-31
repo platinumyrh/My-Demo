@@ -22,6 +22,9 @@ public class LoginUIController : MonoBehaviour
     [Tooltip("密码输入框")]
     public InputField Input_Password;     // 密码输入框
 
+    [Tooltip("服务器IP输入框（留空则用 NetworkManager 里配置的地址）")]
+    public InputField Input_ServerIP;
+
     [Header("按钮")]
     [Tooltip("登录按钮")]
     public Button Btn_Log_in;                 // 登录按钮
@@ -212,6 +215,15 @@ public class LoginUIController : MonoBehaviour
             Input_Password = transform.Find("PanelLogin/Input_Password")?.GetComponent<InputField>();
         }
 
+        if (Input_ServerIP == null)
+        {
+            // 场景里这个面板叫 Panel_Login（旧代码写的是 PanelLogin），两种都试一下
+            Transform panelLoginForIP = transform.Find("Panel_Login");
+            if (panelLoginForIP == null) panelLoginForIP = transform.Find("PanelLogin");
+            if (panelLoginForIP != null)
+                Input_ServerIP = panelLoginForIP.Find("Input_ServerIP")?.GetComponent<InputField>();
+        }
+
         if (Btn_Log_in == null)
         {
             Btn_Log_in = transform.Find("PanelLogin/Btn_Log in")?.GetComponent<Button>();
@@ -245,6 +257,28 @@ public class LoginUIController : MonoBehaviour
     }
 
     /// <summary>
+    /// 把 IP 输入框的值交给 NetworkManager。
+    /// 留空 = 沿用 NetworkManager 里配置的默认地址；返回 false = 格式不对，别继续连
+    /// </summary>
+    private bool ApplyServerIP()
+    {
+        if (Input_ServerIP == null) return true;
+
+        string ip = Input_ServerIP.text.Trim();
+        if (ip.Length == 0) return true;
+
+        if (NetworkManager.Instance.SetServerAddress(ip))
+        {
+            ShowMessage($"正在连接 {ip} ...", Color.white);
+            return true;
+        }
+
+        ShowMessage("❌ 服务器 IP 格式不对，例如 192.168.1.10", Color.red);
+        Input_ServerIP.Select();
+        return false;
+    }
+
+    /// <summary>
     /// 登录协程（异步处理连接+登录）
     /// </summary>
     private System.Collections.IEnumerator LoginCoroutine(string username, string password)
@@ -252,6 +286,15 @@ public class LoginUIController : MonoBehaviour
         _isProcessing = true;
         SetInteractionEnabled(false);  // 禁用所有交互
         ShowMessage("正在连接服务器...", Color.white);
+
+        // 步骤0：把界面上的服务器地址交给网络层。
+        // 必须放在 Connect 之前——连接目标在 Connect 那一刻就锁定到 EndPoint 里了
+        if (!ApplyServerIP())
+        {
+            SetInteractionEnabled(true);
+            _isProcessing = false;
+            yield break;
+        }
 
         // 步骤1：确保已连接服务器
         if (!NetworkManager.Instance.IsConnected)
@@ -310,6 +353,13 @@ public class LoginUIController : MonoBehaviour
     private IEnumerator DelayedLoadScene()
     {
         yield return new WaitForSeconds(1.0f);  // 等待1秒让用户看到成功提示
+
+        // 服务端说有未结束的对局：ReconnectSession 已经/正在切 Main，别再把场景抢回大厅
+        if (ReconnectSession.IsPending)
+        {
+            Debug.Log("[LoginUI] 🔌 正在断线重连，跳过大厅跳转");
+            yield break;
+        }
 
         if (!string.IsNullOrEmpty(nextSceneName))
         {
@@ -388,6 +438,11 @@ public class LoginUIController : MonoBehaviour
         if (Input_Password != null)
         {
             Input_Password.enabled = enabled;
+        }
+
+        if (Input_ServerIP != null)
+        {
+            Input_ServerIP.enabled = enabled;
         }
     }
 

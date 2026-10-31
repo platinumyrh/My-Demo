@@ -565,6 +565,26 @@ public class RoomManager : BaseManager<RoomManager>
     }
 
     /// <summary>
+    /// 重连恢复房间状态：客户端重登后本地没有房间信息，
+    /// 但服务器仍把我算在这个对局里，离开房间/广播都依赖 CurrentRoom
+    /// </summary>
+    public void RestoreRoomState(string roomId, IEnumerable<KeyValuePair<string, string>> members)
+    {
+        var info = new RoomInfo
+        {
+            RoomId = roomId,
+            RoomName = roomId,
+            MaxPlayers = 4,
+            IsInGame = true
+        };
+        foreach (var kv in members)
+            info.PlayerIds.Add(kv.Key);
+
+        CurrentRoom = info;
+        Debug.Log($"[RoomManager] 🔌 已恢复重连房间状态: {roomId}，{info.PlayerIds.Count} 人");
+    }
+
+    /// <summary>
     /// 清除房间状态（用于断开连接时）
     /// </summary>
     public void ClearRoomState()

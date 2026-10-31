@@ -16,7 +16,7 @@ public class OfflinePlaySession : MonoBehaviour
     private const ulong SESSION_SEED = 20261029UL;
     private const int BOT_COUNT = 1;
 
-    /// <summary>当前是否处于单机模式（LockstepGameDriver 据此走本地封帧）</summary>
+    /// <summary>当前是否处于单机模式（LockstepNetworkBridge 据此走本地封帧）</summary>
     public static bool IsActive { get; private set; }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -61,7 +61,7 @@ public class OfflinePlaySession : MonoBehaviour
             seats.Add(new KeyValuePair<string, int>(playerIds[i], i));
 
         // 先缓存会话，GameInitializer 建好 PlayerView 后会补启动
-        LockstepGameDriver.BeginSession(SESSION_SEED, LockstepConfig.TICK_RATE, seats);
+        LockstepSessionBootstrap.BeginSession(SESSION_SEED, LockstepConfig.TICK_RATE, seats);
 
         Debug.Log($"[OfflinePlay] 🎮 单机模式启动：{playerIds.Count} 个座位，种子 {SESSION_SEED}，无需服务器");
     }

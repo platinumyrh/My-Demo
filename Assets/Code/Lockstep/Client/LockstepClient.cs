@@ -24,6 +24,8 @@ namespace GameLockstep
         public long ConfirmedFrame { get; private set; }
         /// <summary>当前已模拟到的帧（含预测部分，≥ ConfirmedFrame）</summary>
         public long SimFrame { get; private set; }
+        /// <summary>收到过的最大权威帧号（0 = 还没收到任何封帧）。联机驱动的帧号时钟就靠它对齐</summary>
+        public long LatestAuthoritativeFrame { get; private set; }
         /// <summary>发生过的回滚重演次数（性能/调试观测用）</summary>
         public int RollbackCount { get; private set; }
 
@@ -37,12 +39,34 @@ namespace GameLockstep
         private readonly Dictionary<long, LogicWorldSnapshot> _snapshots = new Dictionary<long, LogicWorldSnapshot>();
         //本地产生的指令，先扔进这个队列。等网络层调用
         private readonly Queue<KeyValuePair<long, PlayerCommand>> _pendingSends = new Queue<KeyValuePair<long, PlayerCommand>>();
+        //表现层事件缓冲。LogicWorld.Tick 每次开头都会清空 TickEvents，回滚重演时
+        //重演区间里除最后一帧外的事件都会消失，所以每模拟一帧就把事件收进这里
+        private readonly Queue<LogicEvent> _pendingEvents = new Queue<LogicEvent>();
+        //事件去重键 (帧, 类型, 射手)：同一帧同一射手每类事件最多一条，重演重新生成时只留第一份
+        private readonly HashSet<(int Frame, LogicEventType Type, int Shooter)> _seenEvents =
+            new HashSet<(int, LogicEventType, int)>();
 
         public LockstepClient(int localPlayerId, LogicWorld world)
+            : this(localPlayerId, world, 0, null)
+        {
+        }
+
+        /// <summary>
+        /// 从指定帧恢复（断线重连）：world 已经快进到 startFrame，
+        /// 把确认帧/模拟帧对齐到该帧，并继承各座位最后一条权威指令（预测别人要用）。
+        /// </summary>
+        public LockstepClient(int localPlayerId, LogicWorld world, long startFrame,
+                              IReadOnlyDictionary<int, PlayerCommand> lastKnown)
         {
             LocalPlayerId = localPlayerId;
             World = world;
-            _snapshots[0] = world.CaptureSnapshot(); // 回滚锚点：初始状态
+            ConfirmedFrame = startFrame;
+            SimFrame = startFrame;
+            LatestAuthoritativeFrame = startFrame; // 历史帧就是权威进度
+            _snapshots[startFrame] = world.CaptureSnapshot(); // 新回滚锚点
+            if (lastKnown != null)
+                foreach (var kv in lastKnown)
+                    _lastKnown[kv.Key] = kv.Value;
         }
 
         /// <summary>表现层提交本地指令（forFrame = 生效帧，一般 = 当前帧 + INPUT_DELAY_FRAMES）</summary>
@@ -68,9 +92,23 @@ namespace GameLockstep
             return list;
         }
 
+        /// <summary>表现层取出一条待播事件（同一帧的同一件事只会出现一次）</summary>
+        public bool TryDequeueEvent(out LogicEvent ev)
+        {
+            if (_pendingEvents.Count == 0)
+            {
+                ev = default;
+                return false;
+            }
+            ev = _pendingEvents.Dequeue();
+            return true;
+        }
+
         /// <summary>喂入服务器封帧的全员指令。已确认/重复的帧直接丢弃；乱序先缓冲</summary>
         public void OnAuthoritativeInputs(long frame, IReadOnlyDictionary<int, PlayerCommand> inputs)
         {
+            // 进度先记：重复/迟到的帧也会推进"服务端封到哪了"，驱动靠它当帧号时钟
+            if (frame > LatestAuthoritativeFrame) LatestAuthoritativeFrame = frame;
             if (frame <= ConfirmedFrame) return;
             _authBuffer[frame] = CopyInputs(inputs);
         }
@@ -125,8 +163,24 @@ namespace GameLockstep
         {
             _usedInputs[f] = inputs;
             World.Tick(inputs);
+            CollectEvents();
             SimFrame = f;
             _snapshots[f] = World.CaptureSnapshot();
+        }
+
+        /// <summary>
+        /// 把刚模拟这一帧的事件收进表现队列。回滚重演会重新走到同一帧并重新生成事件，
+        /// 已经收过的事件（帧/类型/射手相同）直接丢掉，既不重复播也不会丢
+        /// </summary>
+        private void CollectEvents()
+        {
+            var events = World.TickEvents;
+            for (int i = 0; i < events.Count; i++)
+            {
+                var ev = events[i];
+                if (_seenEvents.Add((ev.Frame, ev.Type, ev.ShooterId)))
+                    _pendingEvents.Enqueue(ev);
+            }
         }
 
         /// <summary>重建第 f 帧输入：权威缓冲优先；否则 自己=本地指令 / 别人=hold-last</summary>
@@ -162,6 +216,8 @@ namespace GameLockstep
             RemoveKeysAtOrBelow(_usedInputs, ConfirmedFrame);
             RemoveKeysAtOrBelow(_localCommands, ConfirmedFrame);
             RemoveKeysBelow(_snapshots, ConfirmedFrame);
+            // 回滚只会从 ConfirmedFrame + 1 起重演，已确认帧的事件不会再生成，去重键可以扔了
+            _seenEvents.RemoveWhere(k => k.Frame <= ConfirmedFrame);
         }
 
         private static bool SameCommand(in PlayerCommand a, in PlayerCommand b)

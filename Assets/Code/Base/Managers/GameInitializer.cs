@@ -90,15 +90,25 @@ public class GameInitializer : MonoBehaviour
         SubscribeToEventBus();
 
         // 5️⃣ 如果已在房间，生成本地/远程 PlayerView
-        SetupPlayersForCurrentRoom();
+        //    断线重连时不走房间槽位：玩家由服务端座位表决定，交给 ReconnectSession 重建
+        if (ReconnectSession.IsPending)
+            Debug.Log("[GameInitializer] 🔌 重连中，玩家视图由 ReconnectSession 按座位表重建");
+        else
+            SetupPlayersForCurrentRoom();
 
         // 6️⃣ GameStart 可能早于 Main 场景加载：PlayerView 建好后补启动 lockstep
-        LockstepGameDriver.TryStartPendingSession();
+        LockstepSessionBootstrap.TryStartPendingSession();
+
+        // 7️⃣ 回放入口：等管理器就绪后按录像重建玩家并起回放会话
+        ReplayPlaybackSession.TryStartPending();
+
+        // 8️⃣ 断线重连：Main 已就绪，建视图并请服务器发历史帧
+        ReconnectSession.TryStartPending();
 
         _isInitialized = true;
 
         Debug.Log("[GameInitializer] ✅ 游戏组件初始化完成");
-        Debug.Log("   📋 初始化顺序: NetworkHandler → PlayerManager → RoomManager → PlayerView → LockstepGameDriver");
+        Debug.Log("   📋 初始化顺序: NetworkHandler → PlayerManager → RoomManager → PlayerView → LockstepSessionBootstrap");
     }
 
     /// <summary>
