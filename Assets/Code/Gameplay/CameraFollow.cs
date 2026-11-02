@@ -107,6 +107,29 @@ public class CameraFollow : MonoBehaviour
     }
 
     /// <summary>
+    /// 切换跟随目标（回放切视角）：重订目标武器的开火事件、保持已锁定的高度差，
+    /// 直接瞬移到对齐位置，避免镜头从上一个玩家身上平滑飘过去。
+    /// </summary>
+    public void SetTarget(PlayerView view)
+    {
+        if (view == null) return;
+
+        if (_localWeapon != null) _localWeapon.OnFired -= OnLocalWeaponFired;
+        _localWeapon = null;
+
+        target = view.transform;
+        if (fireFeedbackEnabled && view.Weapon != null)
+        {
+            _localWeapon = view.Weapon;
+            _localWeapon.OnFired += OnLocalWeaponFired;
+        }
+
+        RecomputeOffset();
+        transform.position = ComputeLookPoint() + _offset;
+        _followVelocity = Vector3.zero;
+    }
+
+    /// <summary>
     /// 瞬移（复活/重开）：直接落到位，不做平滑，避免镜头横穿地图
     /// </summary>
     public void SnapToTarget()

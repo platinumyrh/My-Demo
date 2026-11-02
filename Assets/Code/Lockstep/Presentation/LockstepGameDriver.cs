@@ -20,10 +20,15 @@ public class LockstepGameDriver : MonoBehaviour
 
     private ILockstepSession _session;
     private LogicWorld World => _session?.World;
+    private ClientReplayRecorder _replayRecorder; // 本端录像（只录权威确认帧）
     private bool _subscribedRoomEvents;
 
-    private int _localSeat = -1;
+    private int _localSeat = -1;                // 座位归属：输入采样/录像归属，联机就是"我"
+    private int _viewedSeat = -1;               // 表现层主角：镜头/HUD 看谁，联机恒等于 _localSeat，回放可切
     private readonly Dictionary<int, string> _seatToPlayerId = new();
+    private readonly List<int> _seatOrder = new();  // 座位升序，回放切人按这个循环
+    private ReplayViewSwitchUI _replaySwitchUI;
+    private GameObject _replaySwitchPanel;
 
     /// <summary>座位 → 表现层视图（Transform/动画/名牌/特效入口 + 插值缓存）</summary>
     private class View
@@ -33,7 +38,7 @@ public class LockstepGameDriver : MonoBehaviour
         public NameplateUI Nameplate;
         public WeaponController Weapon;         // 本地玩家的武器（特效用）
         public PlayerView Player;                // 表现层视图（远端特效/受击/死亡入口）
-        public bool IsLocal;
+        public bool IsViewed;                    // 当前镜头/HUD 的主角（联机=本机，回放可切）
 
         public Vector3 PrevPos, CurPos;          // 相邻逻辑帧位置（插值用）
         public float PrevYawDeg, CurYawDeg;      // 瞄准角（逻辑朝向）：驱动头部
@@ -108,11 +113,16 @@ public class LockstepGameDriver : MonoBehaviour
 
         var seatIds = new List<int>(seats.Count);
         foreach (var kv in seats) seatIds.Add(kv.Value);
-        _session = new LiveLockstepSession(
-            new LockstepClient(localSeat, world), localSeat, OfflinePlaySession.IsActive, seatIds);
+        var client = new LockstepClient(localSeat, world);
+        _session = new LiveLockstepSession(client, localSeat, OfflinePlaySession.IsActive, seatIds);
+
+        // 客户端也留一份录像：只录权威确认帧，远端玩家在自己机器上就能回看
+        _replayRecorder?.Dispose();
+        _replayRecorder = ClientReplayRecorder.Start(seed, LockstepConfig.TICK_RATE, seats, client);
 
         BuildViews();
         InitScoreboard();
+        HideReplaySwitchUI();
         GameEventBus.GetInstance().Subscribe<PlayerLeftRoomEventData>(
             GameEventType.OnPlayerLeftRoom, OnPlayerLeftRoom);
         GameEventBus.GetInstance().Subscribe<PlayerJoinedRoomEventData>(
@@ -141,8 +151,13 @@ public class LockstepGameDriver : MonoBehaviour
         foreach (var kv in seats) seatIds.Add(kv.Value);
         _session = new LiveLockstepSession(world, localSeat, false, seatIds, resumeFrame, lastKnown);
 
+        // 重连接回的帧从半局开始，写出来不是可播的完整录像——服务端那份才是全的
+        _replayRecorder?.Dispose();
+        _replayRecorder = null;
+
         BuildViews();
         InitScoreboard();
+        HideReplaySwitchUI();
         GameEventBus.GetInstance().Subscribe<PlayerLeftRoomEventData>(
             GameEventType.OnPlayerLeftRoom, OnPlayerLeftRoom);
         GameEventBus.GetInstance().Subscribe<PlayerJoinedRoomEventData>(
@@ -170,6 +185,7 @@ public class LockstepGameDriver : MonoBehaviour
         _session = new ReplayLockstepSession(data, world, localSeat);
         BuildViews();
         InitScoreboard();
+        ShowReplaySwitchUI();
         _clock.Start();
 
         if (data.TickRate > 0 && data.TickRate != LockstepConfig.TICK_RATE)
@@ -182,8 +198,16 @@ public class LockstepGameDriver : MonoBehaviour
     private void SetSeats(IReadOnlyList<KeyValuePair<string, int>> seats, int localSeat)
     {
         _localSeat = localSeat;
+        _viewedSeat = localSeat;   // 联机/单机与归属一致；回放里初看座位表第一个人
+
+        _seatToPlayerId.Clear();
+        _seatOrder.Clear();
         foreach (var kv in seats)
+        {
             _seatToPlayerId[kv.Value] = kv.Key;
+            _seatOrder.Add(kv.Value);
+        }
+        _seatOrder.Sort();
     }
 
     /// <summary>建立座位 → 场景玩家对象的视图映射</summary>
@@ -216,7 +240,7 @@ public class LockstepGameDriver : MonoBehaviour
                     Nameplate = local.Nameplate,
                     Weapon = localWeapon,
                     Player = local,
-                    IsLocal = true,
+                    IsViewed = seat == _viewedSeat,
                 };
             }
             else
@@ -296,6 +320,8 @@ public class LockstepGameDriver : MonoBehaviour
 
     private void OnDestroy()
     {
+        _replayRecorder?.Dispose();
+        _replayRecorder = null;
         _scoreboard?.Clear();
         _session?.Dispose();
         if (_subscribedRoomEvents)
@@ -336,6 +362,115 @@ public class LockstepGameDriver : MonoBehaviour
             Debug.Log($"[LockstepDriver] 🔌 玩家 {eventData.PlayerId} 重连回对局，恢复座位 {kv.Key} 的计分显示");
             return;
         }
+    }
+
+    #endregion
+
+    #region 回放视角切换
+
+    /// <summary>回放：当前镜头/HUD 跟随的座位</summary>
+    public int ViewedSeat => _viewedSeat;
+
+    /// <summary>回放切人面板显示用的当前视角名字</summary>
+    public string ViewedPlayerName
+    {
+        get
+        {
+            if (_views.TryGetValue(_viewedSeat, out var view) && view.Player != null)
+                return view.Player.DisplayName;
+            return _seatToPlayerId.TryGetValue(_viewedSeat, out var id) ? id : "";
+        }
+    }
+
+    /// <summary>回放：上/下一人（delta = ±1），按座位升序循环，跳过没有视图的座位</summary>
+    public void StepViewedSeat(int delta)
+    {
+        if (_session == null || !_session.IsReplay || _seatOrder.Count == 0) return;
+
+        int count = _seatOrder.Count;
+        int index = _seatOrder.IndexOf(_viewedSeat);
+        if (index < 0) index = 0;
+        int step = delta < 0 ? -1 : 1;
+
+        for (int i = 1; i <= count; i++)
+        {
+            int nextIndex = ((index + step * i) % count + count) % count;
+            int seat = _seatOrder[nextIndex];
+            if (!_views.TryGetValue(seat, out var view) || view.Player == null) continue;
+
+            SetViewedSeat(seat);
+            return;
+        }
+    }
+
+    /// <summary>
+    /// 回放切视角：只翻表现层主角标志（镜头/HUD/受击反馈跟着换人），
+    /// 逻辑世界和座位归属都不动；看的人死了也不自动换人，镜头继续跟着。
+    /// </summary>
+    public void SetViewedSeat(int seat)
+    {
+        if (_session == null || !_session.IsReplay) return;
+        if (seat == _viewedSeat) return;
+        if (!_views.TryGetValue(seat, out var next) || next.Player == null) return;
+
+        if (_views.TryGetValue(_viewedSeat, out var prev) && prev != next)
+        {
+            prev.IsViewed = false;
+            prev.Anim?.SetFiring(false);
+        }
+
+        _viewedSeat = seat;
+        next.IsViewed = true;
+        next.LastAmmo = int.MinValue;   // 强制弹药 HUD 在下一个逻辑帧刷新成新主角的
+
+        _cameraFollow ??= FindObjectOfType<CameraFollow>();
+        _cameraFollow?.SetTarget(next.Player);
+
+        _replaySwitchUI?.Refresh();
+        Debug.Log($"[LockstepDriver] 🎥 回放视角切到座位 {seat}（{ViewedPlayerName}）");
+    }
+
+    private void ShowReplaySwitchUI()
+    {
+        if (_replaySwitchPanel == null)
+        {
+            _replaySwitchPanel = FindReplaySwitchPanel();
+            if (_replaySwitchPanel == null)
+            {
+                Debug.LogWarning("[LockstepDriver] ⚠️ 没找到回放切人面板 Panel_Replay_SwitchView");
+                return;
+            }
+
+            _replaySwitchUI = _replaySwitchPanel.GetComponent<ReplayViewSwitchUI>();
+            if (_replaySwitchUI == null)
+                _replaySwitchUI = _replaySwitchPanel.AddComponent<ReplayViewSwitchUI>();
+        }
+
+        _replaySwitchPanel.SetActive(true);
+        _replaySwitchUI.Bind(this);
+    }
+
+    private void HideReplaySwitchUI()
+    {
+        if (_replaySwitchPanel == null)
+        {
+            _replaySwitchPanel = FindReplaySwitchPanel();
+            if (_replaySwitchPanel == null) return;
+            _replaySwitchUI = _replaySwitchPanel.GetComponent<ReplayViewSwitchUI>();
+        }
+
+        _replaySwitchPanel.SetActive(false);
+    }
+
+    private static GameObject FindReplaySwitchPanel()
+    {
+        // 场景里现在叫 Panel_Replay_SwithView（漏了个 t），两种拼写都认
+        foreach (var t in FindObjectsOfType<Transform>(true))
+        {
+            if (t.name == "Panel_Replay_SwitchView" || t.name == "Panel_Replay_SwithView")
+                return t.gameObject;
+        }
+        return null;
     }
 
     #endregion
@@ -498,7 +633,7 @@ public class LockstepGameDriver : MonoBehaviour
             {
                 view.TargetBodyYawDeg = view.CurYawDeg;
                 view.VisualBodyYawDeg = view.CurYawDeg;
-                if (view.IsLocal) _snapCameraPending = true;
+                if (view.IsViewed) _snapCameraPending = true;
             }
             return;
         }
@@ -602,7 +737,7 @@ public class LockstepGameDriver : MonoBehaviour
         }
         view.PrevReloadTicks = lp.ReloadTicksLeft;
 
-        if (view.IsLocal)
+        if (view.IsViewed)
         {
             // 弹匣余量直接读逻辑状态：回滚纠正过的值也在里面，和真实可开火次数一致
             if (lp.Ammo != view.LastAmmo)
@@ -660,7 +795,9 @@ public class LockstepGameDriver : MonoBehaviour
         view.TurnBlend = Mathf.Lerp(view.TurnBlend, turnTarget, k);
         view.Anim.SetTurn(view.TurnBlend);
 
-        if (view.IsLocal) view.Anim.SetFiring(_inputSampler != null && _inputSampler.FireHeld);
+        // 回放没有输入采样，连续开火状态交给事件里的 PlayFire 一次性触发
+        if (view.IsViewed)
+            view.Anim.SetFiring(!_session.IsReplay && _inputSampler != null && _inputSampler.FireHeld);
     }
 
     /// <summary>消费确定性事件：Fired=射手特效，Hit=受击反应，Died=死亡表现。
@@ -710,7 +847,7 @@ public class LockstepGameDriver : MonoBehaviour
 
         bool hitSomething = ev.TargetId != 0 || ev.HitWall;
 
-        if (view.IsLocal)
+        if (view.IsViewed)
         {
             if (view.Weapon != null)
                 view.Weapon.PlayFireVisual(origin, dir, end, hitSomething, normal);
@@ -737,7 +874,7 @@ public class LockstepGameDriver : MonoBehaviour
 
         Vector3 shooterPos = new Vector3(ev.OriginX.ToFloat(), 1f, ev.OriginZ.ToFloat());
 
-        if (view.IsLocal)
+        if (view.IsViewed)
         {
             _cameraFollow ??= FindObjectOfType<CameraFollow>();
             _cameraFollow?.NotifyDamaged(ev.Damage, shooterPos);
@@ -759,7 +896,7 @@ public class LockstepGameDriver : MonoBehaviour
         string victim = _seatToPlayerId.TryGetValue(ev.TargetId, out var v) ? v : "?";
         Debug.Log($"[LockstepDriver] ☠️ {victim} 被 {killer} 击杀（帧{ev.Frame}）");
 
-        if (view.IsLocal)
+        if (view.IsViewed)
         {
             view.Anim?.SetDead(true);
         }
@@ -768,7 +905,7 @@ public class LockstepGameDriver : MonoBehaviour
             view.Player?.SetDead(true);
         }
 
-        if (ev.ShooterId == _localSeat)
+        if (ev.ShooterId == _viewedSeat)
             CrosshairUI.Instance?.ShowKill();
     }
 

@@ -43,6 +43,7 @@ public class OfflinePlaySession : MonoBehaviour
 
         // 绕过登录：直接写入本地玩家身份（网络未连接，不会有任何 C2S 发出）
         NetworkManager.Instance.ApplyLoginSuccess(LocalPlayerId, LocalPlayerName, "offline");
+        PlayerManager.GetInstance().RegisterPlayerName(LocalPlayerId, LocalPlayerName);
 
         var playerIds = new List<string> { LocalPlayerId };
         var playerManager = PlayerManager.GetInstance();

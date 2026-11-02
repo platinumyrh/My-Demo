@@ -29,6 +29,12 @@ namespace GameLockstep
         /// <summary>发生过的回滚重演次数（性能/调试观测用）</summary>
         public int RollbackCount { get; private set; }
 
+        /// <summary>
+        /// 每确认一帧权威指令触发一次（严格按帧号递增、已去重）。
+        /// 客户端录像只录这条流——预测帧不算，回滚重演也不会重复确认
+        /// </summary>
+        public event Action<long, IReadOnlyDictionary<int, PlayerCommand>> FrameConfirmed;
+
         private readonly Dictionary<long, PlayerCommand> _localCommands = new Dictionary<long, PlayerCommand>();//帧号，输入指令；记录本地玩家的输入情况
         private readonly Dictionary<int, PlayerCommand> _lastKnown = new Dictionary<int, PlayerCommand>();//玩家id，输入指令；记录其他玩家最后一次确认的指令
         //权威缓冲区。网络层收到的服务器真值暂时扔在这里。因为网络是乱序的，必须等齐了才能按顺序吃（Advance 的 A 阶段）。
@@ -140,6 +146,7 @@ namespace GameLockstep
                     _lastKnown[kv.Key] = kv.Value;
                 ConfirmedFrame = f;
                 PruneHistory();
+                FrameConfirmed?.Invoke(f, real);
             }
 
             // B. 预测：推进到目标帧。超前已确认帧 MAX_PREDICTION_FRAMES 为上限——
