@@ -67,7 +67,6 @@ GameObject:
   - component: {fileID: 7686966461338403232}
   - component: {fileID: 3980658315025231457}
   - component: {fileID: 4924032668988721562}
-  - component: {fileID: 8985260059845105714}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -138,18 +137,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 2448797306691859207}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f5c9108c3ceeb6d4bac6436e6e75fbe7, type: 3}
+  m_Script: {fileID: 11500000, guid: d5ccf0f8f2704119b37c46af60ea8a66, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  walkSpeed: 5
-  sprintSpeed: 8
-  turnSpeed: 1080
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  aimPlaneOffset: 0
-  muzzle: {fileID: 0}
-  sendRate: 30
 --- !u!114 &4924032668988721562
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -181,20 +171,6 @@ MonoBehaviour:
   reloadStateName: 
   crossFadeDuration: 0.1
   verbose: 0
---- !u!114 &8985260059845105714
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2448797306691859207}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3385eb08e44ff144e9a4a039c284d01f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  weapon: {fileID: 8040378923357591312}
-  reloadKey: 32
 --- !u!1 &7161570035249300940
 GameObject:
   m_ObjectHideFlags: 0

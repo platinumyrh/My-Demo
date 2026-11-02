@@ -18,6 +18,9 @@ public class LobbyUIController : MonoBehaviour
     [Tooltip("加入房间按钮")]
     public Button Btn_JoinRoom;
 
+    [Tooltip("观看最近回放按钮")]
+    public Button Btn_Replay;
+
     [Header("房间列表面板")]
     [Tooltip("房间列表面板（场景中直接放置，默认隐藏）")]
     public GameObject Panel_RoomList;
@@ -71,6 +74,20 @@ public class LobbyUIController : MonoBehaviour
             Btn_JoinRoom.onClick.AddListener(OnJoinRoomClick);
         }
 
+        // 没在 Inspector 里拖也能用：按名字找场景里的回放入口
+        if (Btn_Replay == null)
+        {
+            Btn_Replay = FindButton(transform, "Btn_Replay");
+        }
+        if (Btn_Replay != null)
+        {
+            Btn_Replay.onClick.AddListener(OnReplayClick);
+        }
+        else
+        {
+            Debug.LogWarning("[LobbyUI] ⚠️ 没找到 Btn_Replay，观看回放入口不可用");
+        }
+
         // 绑定关闭房间列表按钮
         if (Btn_CloseRoomList != null)
         {
@@ -121,6 +138,11 @@ public class LobbyUIController : MonoBehaviour
         if (Btn_JoinRoom != null)
         {
             Btn_JoinRoom.onClick.RemoveListener(OnJoinRoomClick);
+        }
+
+        if (Btn_Replay != null)
+        {
+            Btn_Replay.onClick.RemoveListener(OnReplayClick);
         }
 
         if (Btn_CloseRoomList != null)
@@ -210,6 +232,21 @@ public class LobbyUIController : MonoBehaviour
         // 请求房间列表
         ShowMessage("正在获取房间列表...", Color.cyan);
         RoomManager.GetInstance().RequestRoomList();
+    }
+
+    /// <summary>
+    /// 点击"观看最近回放"按钮
+    /// </summary>
+    private void OnReplayClick()
+    {
+        if (_isProcessing)
+        {
+            ShowMessage("正在处理中...", Color.yellow);
+            return;
+        }
+
+        var (success, message) = ReplayPlaybackSession.BeginLatest();
+        ShowMessage(message, success ? Color.cyan : Color.red);
     }
 
     /// <summary>
@@ -389,6 +426,18 @@ public class LobbyUIController : MonoBehaviour
             Text_Message.color = color;
         }
         Debug.Log($"[LobbyUI] {message}");
+    }
+
+    /// <summary>
+    /// 按名字递归查找按钮（场景里没手动拖引用时的兜底）
+    /// </summary>
+    private static Button FindButton(Transform root, string buttonName)
+    {
+        foreach (var t in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (t.name == buttonName) return t.GetComponent<Button>();
+        }
+        return null;
     }
 
     /// <summary>

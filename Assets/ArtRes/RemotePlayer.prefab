@@ -324,16 +324,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 8546965822301457256}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0131f0efc6d5af34a99b72fb29a30a4b, type: 3}
+  m_Script: {fileID: 11500000, guid: d5ccf0f8f2704119b37c46af60ea8a66, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  interpolationDelay: 0.066
-  correctionRate: 18
-  snapDistance: 3
-  rotationSpeed: 22
-  speedSmoothTime: 0.15
-  inputHoldTime: 0.15
-  playerId: Unknown
 --- !u!114 &6611916908663039130
 MonoBehaviour:
   m_ObjectHideFlags: 0
